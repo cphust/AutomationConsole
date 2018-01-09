@@ -1,0 +1,533 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P3_DriveVerification" Id="{da59f5f3-224c-4fd3-bd10-20370aaa1cc3}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P3_DriveVerification
+VAR
+		fbCoE_ReadParamArray: FB_CoE_ReadParamArray;
+		
+	bReadParam_Enable: BOOL;
+	nCase: INT;
+	fbCoE: BOOL;
+	nParameterNum: UINT;
+	// if there is a comparison error, set to true
+	bError	: BOOL;
+	nErrorID: UDINT;
+	// if comparison is completed w/o errors
+	bComparison_Done: BOOL;
+	fbstCoEData_Comparison: FB_stCoEData_Comparison;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.03		0.00.01		Added Global Error ID
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+
+CASE nCase OF
+	
+	0:	//only run this once
+		GVL_Modes.bDrive_Verified_Finished := FALSE;
+		
+		A1_PopulateReadArray();
+		P2_DriveLoad();			//Loading the WriteArray
+		nCase	:=	10;
+		
+	10:	//read array
+		A2_ReadArray();			//Reads the ReadArray
+		
+		IF fbCoE_ReadParamArray.bDone THEN
+			bComparison_Done := FALSE;
+			bError	:= FALSE;
+			
+			nCase	:=	20;
+		ELSIF fbCoE_ReadParamArray.bError THEN
+			nCase	:= 	9999;				
+		END_IF
+		
+	20:
+		//change this to a for-loop to step through each read & write array to verify
+		//error codes should kick if it gets stuck
+		//if not the same then run INIT again???
+		
+		fbstCoEData_Comparison( bExecute:= FALSE );
+		
+		nCase := 21;
+		
+	21:
+		fbstCoEData_Comparison(
+			nNumOfPara:= GVL_DriveParameters.nNumOfParameters,
+			bExecute:= TRUE );
+		
+		IF fbstCoEData_Comparison.bError THEN
+			nCase := 9999;
+		ELSE
+			IF fbstCoEData_Comparison.bDone THEN
+				ncase := 30;
+			END_IF
+			
+		END_IF
+	
+	
+	30:
+		GVL_Modes.bDrive_Verified_Finished := TRUE;
+		nCase := 0;
+			
+	9999:	//Error Handling
+		GVL_PLC.udnFlyhousePLCErrorID := 16#03000 + 16#00000 + nErrorID;	//Program# + Action# + Case#
+	
+		bError :=	TRUE;
+		nErrorID :=	fbstCoEData_Comparison.nErrorID;
+		nCase := 0;
+		GVL_PLC.nGlobal_Error_ID :=	E_Custom_Trip_Codes.Wrong_Slave_Mode;
+	
+		//should this be in a Function Block???
+	(*	FOR nParameterNum	:=	1 TO nNumOfParameters BY 1 DO
+			IF stCoEDataArray_Write.stCoEData[nParameterNum].dwData = stCoEDataArray_Read.stCoEData[nParameterNum].dwData THEN
+				nParameterNum := nParameterNum + 1;
+				IF nParameterNum = nNumOfParameters THEN
+					bComparison_Done := TRUE;
+					GVL_Modes.bDrive_Verified_Finished := TRUE;
+					nCase := 0;
+				END_IF
+			ELSE
+				bError := TRUE;
+				nErrorID := nParameterNum;
+				nCase :=	9999;
+			END_IF
+		END_FOR  *)
+		
+//	IF stCoEDataArray_Write = stCoEDataArray_Read	THEN	 
+//			GVL_Modes.bDrive_Verified := TRUE;
+//		ELSE
+//			//Throw an error or inform the operator that the parameters have changed, 
+//	END_IF
+//		GVL_Modes.bDrive_Verified_Finished := TRUE;
+//		nCase := 0;
+		
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Action Name="A2_ReadArray" Id="{a6f351a5-8ab1-4fb9-9d26-236473239c1d}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+
+fbCoE_ReadParamArray(
+	bExecute:= 		TRUE,
+	sNetId:= 		F_CreateAmsNetId(nIds:=GVL_IO.stAmsAddr_Kid_1.netId), 
+	nSlaveAddr:= 	GVL_IO.stAmsAddr_Kid_1.port,  
+	tTimeout:= 		T#5S, 
+	nSizeOfArr:= 	nNumOfParameters, 
+	bBusy=> , 
+	bDone=> , 
+	nCurArrLoc=> , 
+	bError=> , 			//Add Error bit
+	nErrorID=> , 		//Add Error ID for Troubleshooting
+	stCoEDataArray:= stCoEDataArray_Read);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A1_PopulateReadArray" Id="{c25546e6-6081-4d51-8c50-4b5fe64323a5}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+//Populate the array using the CoE_ReadParamArray (FB)
+//Only populates index, subindex, and data length 
+//Needed for reading parameters off of CoE
+
+
+
+//M01.P010 := 1; 		2001:0A		//Bipolar REFERENCE Enable On Off		(Still Test Units until verification of code)	19.030
+stCoEDataArray_Read.stCoEData[1].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[1].nSubIndex 		:= 16#2B;
+stCoEDataArray_Read.stCoEData[1].nDataLen 		:= 2;
+
+//M01.P014 := 3; 		2001:0E		//Reference Selector Preset A1 A2		(Still Test Units until verification of code)	19.031
+stCoEDataArray_Read.stCoEData[2].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[2].nSubIndex 		:= 16#1F;
+stCoEDataArray_Read.stCoEData[2].nDataLen 		:= 1;
+
+//M01.P016 := 2.0; 		2001:20		//Preset Selector Timer 2.0 s 10.0 s	(Still Test Units until verification of code)	19.053
+stCoEDataArray_Read.stCoEData[3].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[3].nSubIndex 		:= 16#35;
+stCoEDataArray_Read.stCoEData[3].nDataLen 		:= 4;
+
+//RAMPS
+
+//M02.P003 := 0; 		2002:03		Ramp Hold On Off
+stCoEDataArray_Read.stCoEData[4].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[4].nSubIndex 		:= 16#03;
+stCoEDataArray_Read.stCoEData[4].nDataLen 		:= 1;
+
+//M02.P004 := 0; 		2002:04		Ramp Mode Fast Standard
+stCoEDataArray_Read.stCoEData[5].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[5].nSubIndex 		:= 16#04;
+stCoEDataArray_Read.stCoEData[5].nDataLen 		:= 1;
+
+//M02.P005 := 1; 		2002:05		Disable Ramp Output On Off
+stCoEDataArray_Read.stCoEData[6].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[6].nSubIndex 		:= 16#05;
+stCoEDataArray_Read.stCoEData[6].nDataLen 		:= 1;
+
+//M02.P006 := 0; 		2002:06		S Ramp Enable On Off
+stCoEDataArray_Read.stCoEData[7].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[7].nSubIndex 		:= 16#06;
+stCoEDataArray_Read.stCoEData[7].nDataLen 		:= 1;
+
+//M02.P007 := 1.000		2002:07	 	Maximum Rate Of Change Of Acceleration 1.000 s²/1000rpm 0.030 s²/1000rpm
+stCoEDataArray_Read.stCoEData[8].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[8].nSubIndex 		:= 16#07;
+stCoEDataArray_Read.stCoEData[8].nDataLen 		:= 4;
+
+//M02.P050 := 8; 		2002:32		Timing Options Select 8 1
+stCoEDataArray_Read.stCoEData[9].nIndex 		:= 16#2002;
+stCoEDataArray_Read.stCoEData[9].nSubIndex 		:= 16#05;
+stCoEDataArray_Read.stCoEData[9].nDataLen 		:= 1;
+
+
+//ENCODER SETUP
+
+//M03.P010_SpeedCtlKp1 := 0.01; 			2003:0A		//Speed Controller Proportional Gain Kp1 0.0356 s/rad 0.0100 s/rad
+stCoEDataArray_Read.stCoEData[10].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[10].nSubIndex 	:= 16#0A;
+stCoEDataArray_Read.stCoEData[10].nDataLen 		:= 4;
+
+//M03.P011_SpeedCtlKi1 := 1.00; 			2003:0B		//Speed Controller Integral Gain Ki1 2.84 s²/rad 1.00 s²/rad
+stCoEDataArray_Read.stCoEData[11].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[11].nSubIndex 	:= 16#0B;
+stCoEDataArray_Read.stCoEData[11].nDataLen 		:= 4;
+
+//M03.P018_MotorLoadInertia := 00.00007; 	2003:12		//Motor And Load Inertia 0.00447 kgm² 0.00000 kgm²
+stCoEDataArray_Read.stCoEData[12].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[12].nSubIndex 	:= 16#12;
+stCoEDataArray_Read.stCoEData[12].nDataLen 		:= 4;
+
+//M03.P020_Bandwidth := 63; 				2003:14		//Bandwidth 63 Hz 10 Hz
+stCoEDataArray_Read.stCoEData[13].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[13].nSubIndex 	:= 16#14;
+stCoEDataArray_Read.stCoEData[13].nDataLen 		:= 2;
+
+//This may not be needed, may want this to be OFF
+//M03.P023_HardSpeedRefSelect := 1 ;		2003:17		//Hard Speed Reference Select On Off
+stCoEDataArray_Read.stCoEData[14].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[14].nSubIndex 	:= 16#17;
+stCoEDataArray_Read.stCoEData[14].nDataLen 		:= 1;
+
+//M03.P025_PosFbckPhaseAngle := 0;			2003:19		//Position Feedback Phase Angle  0.0 °
+stCoEDataArray_Read.stCoEData[15].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[15].nSubIndex 	:= 16#19;
+stCoEDataArray_Read.stCoEData[15].nDataLen 		:= 2;
+
+//M03.P033_P1RotaryTurnsBits := 12; 		2003:21		//P1 Rotary Turns Bits 12 16
+stCoEDataArray_Read.stCoEData[16].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[16].nSubIndex 	:= 16#21;
+stCoEDataArray_Read.stCoEData[16].nDataLen 		:= 2;
+
+//M03.P034_P1RotaryLinesPerRev := 16; 		2003:22		//P1 Rotary Lines Per Revolution 16 4096
+stCoEDataArray_Read.stCoEData[17].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[17].nSubIndex 	:= 16#22;
+stCoEDataArray_Read.stCoEData[17].nDataLen 		:= 4;
+
+//M03.P035_P1CommsBits := 30; 				2003:23		//P1 Comms Bits 30 0
+stCoEDataArray_Read.stCoEData[18].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[18].nSubIndex 	:= 16#23;
+stCoEDataArray_Read.stCoEData[18].nDataLen 		:= 2;
+
+//M03.P036_P1SupplyVoltage := 0; 			2003:24		//P1 Supply Voltage 5V 5V
+stCoEDataArray_Read.stCoEData[19].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[19].nSubIndex 	:= 16#24;
+stCoEDataArray_Read.stCoEData[19].nDataLen 		:= 2;
+
+//M03.P038 := 9; 							2003:26		//P1 Device Type SC EnDat 2.0
+stCoEDataArray_Read.stCoEData[20].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[20].nSubIndex 	:= 16#26;
+stCoEDataArray_Read.stCoEData[20].nDataLen 		:= 2;
+
+//M03.P040 := 3; 							2003:28		//P1 Error Detection Level
+stCoEDataArray_Read.stCoEData[21].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[21].nSubIndex 	:= 16#28;
+stCoEDataArray_Read.stCoEData[21].nDataLen 		:= 2;
+
+//M03.P060 := 8; 							2003:3C		//P1 Calculation Time 8 μs
+stCoEDataArray_Read.stCoEData[22].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[22].nSubIndex 	:= 16#3C;
+stCoEDataArray_Read.stCoEData[22].nDataLen 		:= 2;
+
+//M03.P061 := 30; 							2003:3D		//P1 Recovery Time 30 μs  0 μs
+stCoEDataArray_Read.stCoEData[23].nIndex 		:= 16#2003;
+stCoEDataArray_Read.stCoEData[23].nSubIndex 	:= 16#3D;
+stCoEDataArray_Read.stCoEData[23].nDataLen 		:= 2;
+
+
+
+//Current Limits
+
+//M04.P005_MotorCurrentLimit 	:= 175;		2004:05
+stCoEDataArray_Read.stCoEData[24].nIndex 		:= 16#2004;
+stCoEDataArray_Read.stCoEData[24].nSubIndex 	:= 16#05;
+stCoEDataArray_Read.stCoEData[24].nDataLen 		:= 2;
+
+//M04.P006_RegCurrentLimit 		:= 175;		2004:06
+stCoEDataArray_Read.stCoEData[25].nIndex 		:= 16#2004;
+stCoEDataArray_Read.stCoEData[25].nSubIndex 	:= 16#06;
+stCoEDataArray_Read.stCoEData[25].nDataLen 		:= 2;
+
+//M04.P007						:= 175;		2004:07		Symmetrical current Limit
+stCoEDataArray_Read.stCoEData[26].nIndex 		:= 16#2004;
+stCoEDataArray_Read.stCoEData[26].nSubIndex 	:= 16#07;
+stCoEDataArray_Read.stCoEData[26].nDataLen 		:= 2;
+
+
+//TORQUE LOOP
+
+//M04.P013 := 168; 					2004:0D		//Current Controller Kp Gain 168
+stCoEDataArray_Read.stCoEData[27].nIndex 		:= 16#2004;
+stCoEDataArray_Read.stCoEData[27].nSubIndex 	:= 16#0D;
+stCoEDataArray_Read.stCoEData[27].nDataLen 		:= 2;
+
+//M04.P014 := 2529; 				2004:0E		//Current Controller Ki Gain 2529
+stCoEDataArray_Read.stCoEData[28].nIndex 		:= 16#2004;
+stCoEDataArray_Read.stCoEData[28].nSubIndex 	:= 16#0E;
+stCoEDataArray_Read.stCoEData[28].nDataLen 		:= 2;
+
+
+
+//MOTOR SERVO
+
+//M05.P007 := 1.600; 			2005:07		//Rated Current 1.600 A 5.000 A
+stCoEDataArray_Read.stCoEData[29].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[29].nSubIndex 	:= 16#07;
+stCoEDataArray_Read.stCoEData[29].nDataLen 		:= 4;
+
+//M05.P009 := 220;				2005:09		//Rated Voltage 220 V  230 V
+stCoEDataArray_Read.stCoEData[30].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[30].nSubIndex 	:= 16#09;
+stCoEDataArray_Read.stCoEData[30].nDataLen 		:= 2;
+
+//M05.P011 := 4; 				2005:0B		//Number Of Motor Poles 4 PolePairs 3 PolePairs
+stCoEDataArray_Read.stCoEData[31].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[31].nSubIndex 	:= 16#0B;
+stCoEDataArray_Read.stCoEData[31].nDataLen 		:= 2;
+
+//M05.P017 := 5.102919; 		2005:11		//Stator Resistance 5.102919 Ω 0.000000 Ω
+stCoEDataArray_Read.stCoEData[32].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[32].nSubIndex 	:= 16#11;
+stCoEDataArray_Read.stCoEData[32].nDataLen 		:= 4;
+
+//M05.P018 := 16;  				2005:12		//Maximum Switching Frequency 16 kHz 6 kHz
+stCoEDataArray_Read.stCoEData[33].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[33].nSubIndex 	:= 16#12;
+stCoEDataArray_Read.stCoEData[33].nDataLen 		:= 2;
+
+//M05.P024_Ld := 0;				2005:18		//Ld 0.000 mH 0.000 mH
+stCoEDataArray_Read.stCoEData[34].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[34].nSubIndex 	:= 16#18;
+stCoEDataArray_Read.stCoEData[34].nDataLen 		:= 4;
+
+//M05.P032_TorquePerAmpRfcs := 1.60;	2005:20			//Torque Per Amp 1.60 Nm/A  1.60 Nm/A
+stCoEDataArray_Read.stCoEData[35].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[35].nSubIndex 	:= 16#20;
+stCoEDataArray_Read.stCoEData[35].nDataLen 		:= 2;
+
+//M05.P033 := 55;				2005:21		//Volts Per 1000rpm 55 v  98 v
+stCoEDataArray_Read.stCoEData[36].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[36].nSubIndex 	:= 16#21;
+stCoEDataArray_Read.stCoEData[36].nDataLen 		:= 2;
+
+//M05.P072 := 0; 				2005:48		//No-load Lq 0.000 mH 0.000 mH
+stCoEDataArray_Read.stCoEData[37].nIndex 		:= 16#2005;
+stCoEDataArray_Read.stCoEData[37].nSubIndex 	:= 16#48;
+stCoEDataArray_Read.stCoEData[37].nDataLen 		:= 4;
+
+
+//MENU 6 RUN MODES
+//M06.P001 := 1; 				2006:01		//Stop Mode Ramp 
+stCoEDataArray_Read.stCoEData[38].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[38].nSubIndex 	:= 16#01;
+stCoEDataArray_Read.stCoEData[38].nDataLen 		:= 2;
+ 
+//M06.P008 := 0; 				2006:08		//Hold Zero Speed Off  
+stCoEDataArray_Read.stCoEData[39].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[39].nSubIndex 	:= 16#08;
+stCoEDataArray_Read.stCoEData[39].nDataLen 		:= 2;
+
+//M06.P073 := 400; 				2006:49		//Braking IGBT Lower Threshold 400 V 390 V
+stCoEDataArray_Read.stCoEData[40].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[40].nSubIndex 	:= 16#49;
+stCoEDataArray_Read.stCoEData[40].nDataLen 		:= 2;
+
+//M06.P074 := 400; 				2006:4A		//Braking IGBT Upper Threshold 400 V 390 V
+stCoEDataArray_Read.stCoEData[41].nIndex 		:= 16#2006;
+stCoEDataArray_Read.stCoEData[41].nSubIndex 	:= 16#4A;
+stCoEDataArray_Read.stCoEData[41].nDataLen 		:= 2;
+
+
+//Analog Modes MENU 7
+//M07.P007 := 6;				2007:07		//analog 1 in voltage mode
+stCoEDataArray_Read.stCoEData[42].nIndex 		:= 16#2007;
+stCoEDataArray_Read.stCoEData[42].nSubIndex 	:= 16#07;
+stCoEDataArray_Read.stCoEData[42].nDataLen 		:= 2;
+
+//M07.P011 := 6;				2007:0B		//analog 2 in voltage mode
+stCoEDataArray_Read.stCoEData[43].nIndex 		:= 16#2007;
+stCoEDataArray_Read.stCoEData[43].nSubIndex 	:= 16#0B;
+stCoEDataArray_Read.stCoEData[43].nDataLen 		:= 2;
+
+//M07.P015 := 6;				2007:0F		//analog 3 in voltage mode
+stCoEDataArray_Read.stCoEData[44].nIndex 		:= 16#2007;
+stCoEDataArray_Read.stCoEData[44].nSubIndex 	:= 16#0F;
+stCoEDataArray_Read.stCoEData[44].nDataLen 		:= 2;
+
+
+//Digital MENU 8
+//M08.P011 := 0; 				2008:0B		//Digital I/O 01 invert is off
+stCoEDataArray_Read.stCoEData[45].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[45].nSubIndex 	:= 16#0B;
+stCoEDataArray_Read.stCoEData[45].nDataLen 		:= 2;
+
+//M08.P021 := 12.040; 			2008:15		//Digital I/O 01 Source/Destination T24 12.040 10.003
+stCoEDataArray_Read.stCoEData[46].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[46].nSubIndex 	:= 16#15;
+stCoEDataArray_Read.stCoEData[46].nDataLen 		:= 2;
+
+//M08.P022 := 0; 				2008:16		//Digital I/O 02 Source/Destination T25 0.000 10.033
+stCoEDataArray_Read.stCoEData[47].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[47].nSubIndex 	:= 16#16;
+stCoEDataArray_Read.stCoEData[47].nDataLen 		:= 2;
+
+//M08.P023 := 0; 				2008:17		//Digital I/O 03 Source/Destination T26 0.000 6.030
+stCoEDataArray_Read.stCoEData[48].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[48].nSubIndex 	:= 16#17;
+stCoEDataArray_Read.stCoEData[48].nDataLen 		:= 2;
+
+//M08.P024 := 0; 				2008:18		//Digital Input 04 Destination T27 0.000 6.032
+stCoEDataArray_Read.stCoEData[49].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[49].nSubIndex 	:= 16#18;
+stCoEDataArray_Read.stCoEData[49].nDataLen 		:= 2;
+
+//M08.P025 := 0; 				2008:19		//Digital Input 05 Destination T28 0.000 1.041
+stCoEDataArray_Read.stCoEData[50].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[50].nSubIndex 	:= 16#19;
+stCoEDataArray_Read.stCoEData[50].nDataLen 		:= 2;
+
+//M08.P026 := 0; 				2008:1A		//Digital Input 06 Destination T29 0.000 6.031
+stCoEDataArray_Read.stCoEData[51].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[51].nSubIndex 	:= 16#1A;
+stCoEDataArray_Read.stCoEData[51].nDataLen 		:= 2;
+
+//M08.P031 := 1; 				2008:1F		//Digital I/O 01 Output Select T24 On
+stCoEDataArray_Read.stCoEData[52].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[52].nSubIndex 	:= 16#1F;
+stCoEDataArray_Read.stCoEData[52].nDataLen 		:= 2;
+
+//M08.P032 := 1; 				2008:20		//Digital I/O 02 Output Select T25 On 
+stCoEDataArray_Read.stCoEData[53].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[53].nSubIndex 	:= 16#20;
+stCoEDataArray_Read.stCoEData[53].nDataLen 		:= 2;
+
+//M08.P033 := 0; 				2008:21		//Digital I/O 03 Output Select T26  Off
+stCoEDataArray_Read.stCoEData[54].nIndex 		:= 16#2008;
+stCoEDataArray_Read.stCoEData[54].nSubIndex 	:= 16#21;
+stCoEDataArray_Read.stCoEData[54].nDataLen 		:= 2;
+
+
+//MENU10
+//M10.P030 := 0.250; 			200A:1E		//Braking Resistor Rated Power 0.250 kW 0.050 kW
+stCoEDataArray_Read.stCoEData[55].nIndex 		:= 16#200A;
+stCoEDataArray_Read.stCoEData[55].nSubIndex 	:= 16#1E;
+stCoEDataArray_Read.stCoEData[55].nDataLen 		:= 4;
+
+//M10.P031 := 60.000; 			200A:1F		//Braking Resistor Thermal Time Constant 60.000 s 3.300 s
+stCoEDataArray_Read.stCoEData[56].nIndex 		:= 16#200A;
+stCoEDataArray_Read.stCoEData[56].nSubIndex 	:= 16#1F;
+stCoEDataArray_Read.stCoEData[56].nDataLen 		:= 4;
+
+//M10.P061 := 27.00; 			200A:3D		//Braking Resistor Resistance 27.00 Ω 0.00 Ω
+stCoEDataArray_Read.stCoEData[57].nIndex 		:= 16#200A;
+stCoEDataArray_Read.stCoEData[57].nSubIndex 	:= 16#3D;
+stCoEDataArray_Read.stCoEData[57].nDataLen 		:= 4;
+
+
+//MENU 12 BRAKE CONTROL
+//M12.P041 := 1; 				200C:29		//Brake Control: Enable On Off
+stCoEDataArray_Read.stCoEData[58].nIndex 		:= 16#200C;
+stCoEDataArray_Read.stCoEData[58].nSubIndex 	:= 16#29;
+stCoEDataArray_Read.stCoEData[58].nDataLen 		:= 2;
+
+//M12.P046 := 0.5; 				200C:2E		//Brake Control: Brake Delay 0.5 s 1.0 s
+stCoEDataArray_Read.stCoEData[59].nIndex 		:= 16#200C;
+stCoEDataArray_Read.stCoEData[59].nSubIndex 	:= 16#2E;
+stCoEDataArray_Read.stCoEData[59].nDataLen 		:= 2;
+
+//M12.P047 := 0.5;				200C:2F		//Brake Control: Post-brake Release Delay 0.5 s 1.0 s
+stCoEDataArray_Read.stCoEData[60].nIndex 		:= 16#200C;
+stCoEDataArray_Read.stCoEData[60].nSubIndex 	:= 16#2F;
+stCoEDataArray_Read.stCoEData[60].nDataLen 		:= 2;
+
+//M12.P048 := 0.5;				200C:30		//Brake Control: Brake Apply Delay 0.5 s 1.0 s
+stCoEDataArray_Read.stCoEData[61].nIndex 		:= 16#200C;
+stCoEDataArray_Read.stCoEData[61].nSubIndex 	:= 16#30;
+stCoEDataArray_Read.stCoEData[61].nDataLen 		:= 2;
+
+
+
+//Menu 18
+//M18.P012 := 40;				2012:0C		Rev number of the software
+stCoEDataArray_Read.stCoEData[62].nIndex 		:= 16#2012;
+stCoEDataArray_Read.stCoEData[62].nSubIndex 	:= 16#0C;
+stCoEDataArray_Read.stCoEData[62].nDataLen 		:= 2;
+
+
+//Menu 22	- Menu '0' setup
+//M22.P054 := 10.101;		2016:36		Drive Status
+stCoEDataArray_Read.stCoEData[63].nIndex 		:= 16#2016;
+stCoEDataArray_Read.stCoEData[63].nSubIndex 	:= 16#36;
+stCoEDataArray_Read.stCoEData[63].nDataLen 		:= 2;
+
+//M22.P055 := 3.138;		2016:37		P2 Device Type
+stCoEDataArray_Read.stCoEData[64].nIndex 		:= 16#2016;
+stCoEDataArray_Read.stCoEData[64].nSubIndex 	:= 16#37;
+stCoEDataArray_Read.stCoEData[64].nDataLen 		:= 2;
+
+//M22.p056 := 3.134;		2016:38		P2 Rotary Lines per Revolution
+stCoEDataArray_Read.stCoEData[65].nIndex 		:= 16#2016;
+stCoEDataArray_Read.stCoEData[65].nSubIndex 	:= 16#38;
+stCoEDataArray_Read.stCoEData[65].nDataLen 		:= 2;
+
+//M22.p057 := 3.122;		2016:39		P1 Thermistor Temperature
+stCoEDataArray_Read.stCoEData[66].nIndex 		:= 16#2016;
+stCoEDataArray_Read.stCoEData[66].nSubIndex 	:= 16#39;
+stCoEDataArray_Read.stCoEData[66].nDataLen 		:= 2;
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P3_DriveVerification">
+      <LineId Id="3" Count="101" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P3_DriveVerification.A2_ReadArray">
+      <LineId Id="2" Count="14" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P3_DriveVerification.A1_PopulateReadArray">
+      <LineId Id="2" Count="369" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

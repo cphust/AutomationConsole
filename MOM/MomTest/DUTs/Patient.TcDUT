@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <DUT Name="Patient" Id="{7326ef91-ac2a-4ed4-9579-abaabf1bab05}">
+    <Declaration><![CDATA[TYPE Patient :
+STRUCT
+	X : DINT := -10000; //patient location in mm
+	Y : DINT := -10000; //patient location in mm
+	ActiveSwitch: BOOL;
+	AgeTimer : TON;
+	AGE: TIME := T#0S;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

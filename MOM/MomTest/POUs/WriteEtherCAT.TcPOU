@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="WriteEtherCAT" Id="{4b2d570c-56ff-41f3-960a-84c1ae1ecbcf}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM WriteEtherCAT
+VAR
+	i : INT;
+	i2 : INT;
+	NetIDString : STRING;
+	SymInfo  : ARRAY[1..4]  OF PLC_ReadSymInfoByName;
+	SymInd : ARRAY[1..4] OF INT;
+	HostFind : FB_GetHostAddrByName;
+	COERead : adsread;
+	Exec : BOOL;
+	destaf : DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//HostFind(sHostName := 'GANTRYKID_1', bExecute := Exec);
+//FOR i := 1 TO 4 DO		
+//	NetIDString :=INT_TO_STRING(BYTE_TO_INT(main.Kid[i].Address.netId[0]));
+//
+//	FOR i2 := 1 TO 5 DO NetIDString := CONCAT(Concat(netIDString, '.'), INT_TO_STRING(BYTE_TO_INT(main.Kid[i].Address.netId[i2]))); END_FOR
+//SymInfo[i](NetID := NetIDString,  PORT:= main.kid[i].address.port, SymName:= 'TIID^Device 3 (EtherCAT Slave)^Outputs^CurrentPosition_ToMom', Start:=Exec);
+
+	//MAIN.Kid[i].EtherCATWriter();
+//END_FOR 	
+//COERead(netid:=NetIDString, Port:=851, IDxGRP:=50593872,idxoffs:= 2164260877,Len:=4,DestAddr:=ADR(destaf),read:=Exec);]]></ST>
+    </Implementation>
+    <LineIds Name="WriteEtherCAT">
+      <LineId Id="29" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="16" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

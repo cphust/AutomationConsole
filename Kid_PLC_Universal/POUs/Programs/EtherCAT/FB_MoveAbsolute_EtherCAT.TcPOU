@@ -1,0 +1,241 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="FB_MoveAbsolute_EtherCAT" Id="{f28197a8-0f3b-4937-b719-061e3136c8e4}" SpecialFunc="None">
+    <Declaration><![CDATA[ FUNCTION_BLOCK FB_MoveAbsolute_EtherCAT //used to move axis to specified position. 
+VAR_INPUT
+DeadCounter :Dint ;
+END_VAR
+
+VAR_OUTPUT
+	qc : INT;
+	//ActPOS : LREAL;
+	//ActVelo : LREAL;
+	//PosDiff : REAL;
+	//exceptionMessage : STRING := '';
+	BrakeEnabledCounter : DINT := 0;
+	StaticCounter : DINT := 0; 
+		OnUpLimit : UDINT;
+	OnDownLimit : UDINT;
+		SmodeTargetPos : LINT;  //target position for move
+END_VAR
+
+VAR
+	RMT_DeadmanOFFCOunter : DINT;
+//	checker : BOOL;
+	ScalingInt : DINT;
+	checkingReal : LINT;
+//	checkingInt: DINT;  //only used for program
+	
+	//CurrentPosition : DINT;
+	
+	//SCALED VALUES FOR CALCULATIONS
+
+	SmodeVel : LINT:= 10; //Maximum allowed velocity
+	SmodeAcc : LINT:= 10; //Maximum allowed Acceleration
+	SmodeDec : LINT:= 10;
+	//SmodeJerk: ULINT:= 10; //Maximum change in Accel per loop
+	SmodeWindow : LINT:= 2000; //Allowed window for move to be complete
+	
+	sendVel : LINT := 10;  //Actual velocity to send to EtherCAT card
+	sendAcc: LINT := 10;  //Actual Acceleration to send to EtherCAT card
+	sendDec: LINT := 10;
+
+
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT joystickMotion.DeadManOut THEN
+			KidAxis.PDecel := LREAL_TO_DINT(GVL_Index.Decel_For_DeadMan );
+			KidAxis.pVelMax := 0;
+			deadCounter := deadCOunter + 1;
+ELSE
+	GVL_Modes.nMotion_Command := 2;
+	deadCounter := 0;
+END_IF
+
+IF  KidAxis.status.ready THEN
+	ScalingInt := LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum);
+ELSE
+	RETURN;
+END_IF
+
+	SmodeTargetPos := F_LimitTarget(LREAL_TO_DINT(KidAxis.modeTargetPos));// * scalingInt;
+	SmodeVel := ABS(KidAxis.modeVel);// * scalingInt;
+	SmodeAcc := DINT_TO_LINT(KidAxis.modeAcc);//* scalingInt;
+	SmodeDec := DINT_TO_LINT(KidAxis.modeAcc);
+	
+
+	SmodeWindow := KidAxis.modeWindow;//* scalingInt;
+	
+	
+IF kidAxis.CheckIn.momControl AND NOT (joystickMotion.DeadManOut)  THEN
+
+	IF GVL_INDEX.Direction_Flipped THEN
+		SmodeTargetPos := F_LimitTarget(GVL_Index.Home_Offset - (GVL_DriveParameters.targetpos_FromMom * ScalingInt) );
+	ELSE
+		SmodeTargetPos := F_LimitTarget((GVL_DriveParameters.targetpos_FromMom * ScalingInt) + GVL_Index.Home_Offset);
+	END_IF
+	SmodeVel := GVL_DriveParameters.modeVel_FromMom;
+	SmodeAcc := (GVL_DriveParameters.modeAccel_FromMom/3);
+	SmodeDec := (GVL_DriveParameters.modeDecel_FromMom/3) + 5;
+	//IF SmodeDec < SmodeAcc THEN smodeDec := smodeAcc; END_IF
+//SmodeJerk:=  SmodeAcc/2;//* scalingInt;
+END_IF
+
+	IF (NOT kidAxis.CheckIn.momControl OR GVL_HMI.MomControl_Bypass) THEN
+		IF joyStickMotion.DeadManOut THEN smodeVel := ABS(LREAL_TO_LINT(GVL_Motion.rHoist_SelectedVelocity)) + 5; END_IF
+		IF joyStickMotion.DeadManOut  THEN smodeAcc := ABS(LREAL_TO_LINT(GVL_IO.rJoystick_Feedback * LINT_TO_LREAL(KidAxis.modeAcc) / 100)) + 20; END_IF;
+		IF joyStickMotion.DeadManOut THEN smodeDec := sModeDec + 200; END_IF;
+	END_IF
+
+IF (kidAxis.CheckIn.momControl AND NOT kidAxis.CheckIn.Rmt_DeadManPressed) AND NOT GVL_HMI.MomControl_Bypass THEN
+	KidAxis.PDecel := GVL_Index.Decel_For_DeadMan;
+	KidAxis.pVelMax := 0;
+	IF RMT_DeadmanOFFCOunter < 0  THEN 
+		RMT_DeadmanOFFCOunter := 0;
+	END_IF
+	RMT_DeadmanOFFCOunter := RMT_DeadmanOFFCOunter + 1;
+	
+	IF RMT_DeadmanOFFCOunter < 300  THEN 
+		RETURN;
+	END_IF
+END_IF
+
+IF  (joystickMotion.DeadManOut OR (kidAxis.CheckIn.momControl AND kidAxis.CheckIn.Rmt_DeadManPressed)) THEN
+ 	//GVL_DriveParameters.controlWord:=15; //ENABLE DRIVE
+	IF RMT_DeadmanOFFCOunter > 0  THEN 
+		RMT_DeadmanOFFCOunter := 0;
+	END_IF
+	RMT_DeadmanOFFCOunter := RMT_DeadmanOFFCOunter - 1;
+	
+	GVL_Modes.bDrive_Enable := TRUE;
+	KidAxis.pVelMax := 0;
+	IF RMT_DeadmanOFFCOunter > -300  THEN 
+		RETURN;
+	END_IF
+ ELSE
+	 //GVL_DriveParameters.controlWord := 7; 
+	 GVL_Modes.bDrive_Enable := FALSE;
+END_IF
+
+		checkingreal :=   ( ScalingInt * kidAxis.pVelDem * LREAL_TO_LINT(ABS(KidAxis.pVelDem)) )/ (  SmodeDec ) ; //Higher means more damping
+
+		IF DINT_TO_LINT(KidAxis.actualPos) + checkingreal - SmodeTargetPos  > smodeWindow  THEN
+			sendVel := -1 * ABS(SmodeVel);	
+			SendAcc := smodeAcc;
+		ELSIF KidAxis.actualPos + checkingreal - smodeTargetPos <= -1 * smodeWindow THEN
+			sendVel :=  ABS(SmodeVel);
+			SendAcc := smodeAcc;
+		ELSE
+				SendVel :=0;
+		END_IF
+		
+
+				IF KidAxis.ActualVel = 0 THEN 	KidAxis.isbusy := FALSE; END_IF
+			SendDec := smodeDec;	
+IF (NOT joystickMotion.DeadManOut AND NOT kidAxis.CheckIn.momControl)
+	OR (kidAxis.CheckIn.momControl AND  NOT kidAxis.CheckIn.Rmt_DeadManPressed) THEN
+		//SendAcc := GVL_Speeds.QuickStop_Accel;
+		SendDec := GVL_Index.Decel_For_DeadMan;
+		SendVel := 0;
+END_IF
+
+
+	
+				
+IF KidAxis.pVelDem > -1 AND KidAxis.pVelDem < 1  THEN
+	StaticCounter := StaticCounter + 1;
+	ELSE
+	StaticCounter := 0;
+END_IF
+
+IF StaticCounter< 0 THEN staticCounter  := 10000;  END_IF
+
+OnUPLimit :=  BOOL_TO_USINT((NOT gvl_iNDEX.DIRECTION_FLIPPED AND ((Kidaxis.pVelDem > 0 OR SmodeTargetPos >= KidAxis.actualPos) AND  NOT (GVL_Safe_IO.bLimit_Hard_Up OR GVL_SAFE_IO.bHard_UP_Bypass_Enable)))
+	OR (gvl_iNDEX.DIRECTION_FLIPPED AND ((Kidaxis.pVelDem < 0 OR SmodeTargetPos <= KidAxis.actualPos) AND  NOT (GVL_Safe_IO.bLimit_Hard_Up OR GVL_SAFE_IO.bHard_UP_Bypass_Enable)))) ;
+
+OnDownLimit :=  BOOL_TO_USINT((gvl_iNDEX.DIRECTION_FLIPPED  AND ((Kidaxis.pVelDem > 0 OR SmodeTargetPos >= KidAxis.actualPos) AND  NOT (GVL_Safe_IO.bLimit_Hard_Down OR GVL_SAFE_IO.bHard_Down_Bypass_Enable)))
+	OR (NOT GVL_Index.Direction_Flipped AND ((Kidaxis.pVelDem < 0 OR SmodeTargetPos <= KidAxis.actualPos) AND  NOT (GVL_Safe_IO.bLimit_Hard_down OR GVL_SAFE_IO.bHard_Down_Bypass_Enable))));
+	
+IF OnUpLimit > 0  OR OnDownLimit > 0   THEN 
+	SendDec := DINT_TO_LINT(GVL_Index.Decel_For_DeadMan);
+		SendVel := LINT_TO_INT(0);
+		SendAcc :=0;
+	//	OnUpLimit:=1;
+	//	OnDownLimit:=1;
+ELSE
+
+	//	IF OnUpLimit=1 AND OnDOwnLimit = 1 THEN OnUpLimit := 0;  OnDownLimit :=0; END_IF
+END_IF
+KidAxis.PDecel := 10 + LINT_TO_DINT(sendDec * 6/5 );
+		IF LINT_TO_DINT(SendAcc) > 20000 THEN SendAcc := 20000; END_IF
+		
+		IF GVL_Safe_IO.bRelease_Motor_Brake AND SendAcc <= 20000 THEN
+			KidAxis.PAccel := LINT_TO_DINT(SendAcc);
+				qc:= qc + 1;	
+			KidAxis.pVelMax := LINT_TO_INT(SendVel);
+			IF(ABS(SendVel)=1) THEN kidAxis.pVelMax := 0; END_IF
+		
+		END_IF
+		
+
+	//		Sendvel := 0;
+	//ELSIF GVL_DriveParameters.actualpos - modePos + modewindow < (GVL_DriveParameters.actualVel *  GVL_DriveParameters.actualVel)/(1 + (2000 * modeAcc)) AND GVL_DriveParameters.actualVel>0 THEN
+	//		Sendvel := 1;
+	//ELSE
+	//		sendVel := 2;
+	//END_IF]]]]><![CDATA[></ST>
+]]></ST>
+    </Implementation>
+    <Action Name="MotionAtLimits" Id="{ac6cfbe2-58b7-4fd4-bbca-77ed3c7df0f9}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="FB_MoveAbsolute_EtherCAT">
+      <LineId Id="2567" Count="3" />
+      <LineId Id="2563" Count="1" />
+      <LineId Id="2566" Count="0" />
+      <LineId Id="1844" Count="11" />
+      <LineId Id="2472" Count="1" />
+      <LineId Id="1859" Count="15" />
+      <LineId Id="2514" Count="4" />
+      <LineId Id="1875" Count="0" />
+      <LineId Id="2584" Count="3" />
+      <LineId Id="2598" Count="1" />
+      <LineId Id="2597" Count="0" />
+      <LineId Id="2589" Count="0" />
+      <LineId Id="2596" Count="0" />
+      <LineId Id="2590" Count="1" />
+      <LineId Id="2588" Count="0" />
+      <LineId Id="1877" Count="0" />
+      <LineId Id="2344" Count="0" />
+      <LineId Id="1878" Count="1" />
+      <LineId Id="2592" Count="1" />
+      <LineId Id="2351" Count="0" />
+      <LineId Id="2594" Count="1" />
+      <LineId Id="2069" Count="0" />
+      <LineId Id="2600" Count="0" />
+      <LineId Id="2602" Count="1" />
+      <LineId Id="2601" Count="0" />
+      <LineId Id="1880" Count="1" />
+      <LineId Id="2070" Count="0" />
+      <LineId Id="1882" Count="0" />
+      <LineId Id="1890" Count="1" />
+      <LineId Id="1898" Count="6" />
+      <LineId Id="2429" Count="1" />
+      <LineId Id="1905" Count="0" />
+      <LineId Id="2396" Count="0" />
+      <LineId Id="1929" Count="29" />
+      <LineId Id="2109" Count="0" />
+      <LineId Id="1959" Count="12" />
+      <LineId Id="2113" Count="0" />
+      <LineId Id="1974" Count="9" />
+      <LineId Id="718" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MoveAbsolute_EtherCAT.MotionAtLimits">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

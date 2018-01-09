@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <GVL Name="GVL_IO" Id="{2adea4ff-968a-448d-8f6b-0a59d725396d}">
+    <Declaration><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+	 Chris Mauban				2016.05.04		0.00.01		Added EL3356 Status, P2Position
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+VAR_GLOBAL
+//***Assignment of Hardware IO to Arrays for P44_IO_Map (PRG)***//
+	EL1008 						AT %I*	: ARRAY[1..8] OF BOOL;
+	EL3356_Value				AT %I*	: DINT;
+	//EL3356_Status				AT %I* 	: INT;
+	//EL3356_Tara					AT %Q* 	: BOOL;
+	DriveThermalTripPercentage AT %I*: INT;
+	stAmsAddr_Kid_1				AT %I* 	: ST_AmsAddr;
+	stAmsAddr_Kid_1Drive		AT %IW0 	: ST_AmsAddr;
+	stAmsAddr_EL6900			AT %I* 	: ST_AmsAddr;	
+	VelDem_UU : DINT;
+	nAnalog_Input_Raw 			AT %I*	: INT;
+	rJoystick_Feedback			     	:	REAL;	
+	vMaxValueCalib : LREAL := 9000;
+	vMinValueCalib : LREAL := -9000;
+	
+
+	bDrive_Motor_Brake_Release	AT %I*	: BOOL;
+	unP2Position				AT %I*	: UINT;	
+	//stAmsAddr_EL600x	AT %I* 	: ST_AmsAddr;
+	
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+			kidAxis								: ST_EtherCATAxis;
+			vTrim : INT := 0;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

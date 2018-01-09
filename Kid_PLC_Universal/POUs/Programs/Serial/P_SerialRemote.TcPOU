@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_SerialRemote" Id="{493ca48e-f127-44e6-80e3-713e7be7cfe4}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+SerialCom_InfoSys_Sample1 (v2.0)
+This sample sends and receives a string via serial communication.
+Hardware interface used: EL terminal
+*)
+PROGRAM P_SerialRemote
+VAR
+	fbEL600x	: FB_SerialCom;
+	sMyString: STRING;
+	
+
+	sMyStringSend: STRING  := '1';
+
+	bStartTimer: BOOL;
+	nLEDSend: INT;
+	btest: BOOL;
+	fbTOF: TOF;
+	fbTON: Ton;
+	fbTONZon: Ton;
+	fbTONHeartbeatON: Ton;
+	fbTONHeartbeatOFF: Ton;
+	bLastCount: BOOL;
+	unStringSize: UINT;
+	sStringDecipher : STRING;
+	fbTOFDevOn: TOF;
+	i: INT;
+	sSerialStringList: ARRAY[1..20] OF string;
+	fbTonSerialStream: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbTOFDevOn(IN:= fbEL600x.bStringReceived, PT:= T#1S);
+GVL_Serial.bDeviceOn := INT_TO_BOOL(STRING_TO_INT(F_ToCHR(sMyString[1]))) AND fbTOFDevOn.Q;
+
+//////////////////////////////////////////////////////
+//Disable all Wireless Inputs when GVL_PLC.bLocalKeySwitchInput is FALSE
+//////////////////////////////////////////////////////
+IF GVL_PLC.bLocalKeySwitchInput THEN
+	sMyString := fbEL600x.sLastReceivedString;
+ELSE
+	sMyString := '';
+END_IF
+//////////////////////////////////////////////////////
+
+unStringSize := SIZEOF(sMyString);
+
+IF P_JoystickSetup.bTurnOffJoystickSend OR GVL_PLC.bWiredJoystickEn THEN
+	sMyStringSend := P_JoystickSetup.sSendString;
+	GVL_Serial.bEstop := FALSE;
+	GVL_Serial.bDeviceOn := FALSE;
+ELSE
+	IF fbEL600x.nStringLength = 33 AND unStringSize = 81 THEN
+	//V10502v H10508h ZFz DFd EFe CFc J0002j
+		//Vertical Signal
+		IF F_ToCHR(sMyString[0]) = 'V' AND F_ToCHR(sMyString[6]) = 'v' THEN
+			sStringDecipher := LEFT(sMyString,6);
+			sStringDecipher := RIGHT(sStringDecipher,4);
+			GVL_Serial.nVertical := STRING_TO_INT(sStringDecipher);
+		END_IF
+		
+		//Horizontal Signal
+		IF F_ToCHR(sMyString[7]) = 'H' AND F_ToCHR(sMyString[13]) = 'h' THEN
+			sStringDecipher := LEFT(sMyString,13);
+			sStringDecipher := RIGHT(sStringDecipher,4);
+			GVL_Serial.nHorizontal := STRING_TO_INT(sStringDecipher);
+		END_IF
+		
+		//Zon Signal
+		IF F_ToCHR(sMyString[14]) = 'Z' AND F_ToCHR(sMyString[16]) = 'z' THEN
+			sStringDecipher := LEFT(sMyString,16);
+			sStringDecipher := RIGHT(sStringDecipher,1);
+			GVL_Serial.bZonRaw := sStringDecipher = 'N';
+		END_IF
+		fbTONZon(IN:=GVL_Serial.bZonRaw,PT:=T#100MS);
+		GVL_Serial.bZon := fbTONZon.Q;
+		
+		//Deadman Signal
+		IF F_ToCHR(sMyString[17]) = 'D' AND F_ToCHR(sMyString[19]) = 'd' THEN
+			sStringDecipher := LEFT(sMyString,19);
+			sStringDecipher := RIGHT(sStringDecipher,1);
+			GVL_Serial.bDeadmanRaw := sStringDecipher = 'N';
+		END_IF
+		fbTON(IN:=GVL_Serial.bDeadmanRaw,PT:=T#200MS);
+		GVL_Serial.bDeadman := fbTON.Q;
+		
+		//Estop Signal
+		IF F_ToCHR(sMyString[20]) = 'E' AND F_ToCHR(sMyString[22]) = 'e' THEN
+			sStringDecipher := LEFT(sMyString,22);
+			sStringDecipher := RIGHT(sStringDecipher,1);
+			GVL_Serial.bEstop := sStringDecipher = 'N';
+		END_IF
+		//fbTOF(IN:=INT_TO_BOOL(STRING_TO_INT(MID(sMyString,1,23))),PT:=T#500MS);
+		//GVL_Serial.bEstop := fbTOF.Q;
+		
+		//Heartbeat Count Signal
+		IF F_ToCHR(sMyString[23]) = 'C' AND F_ToCHR(sMyString[25]) = 'c' THEN
+			sStringDecipher := LEFT(sMyString,25);
+			sStringDecipher := RIGHT(sStringDecipher,1);
+			GVL_Serial.bCount := sStringDecipher = 'N';
+		END_IF
+		
+
+		//Joystick Number
+		IF F_ToCHR(sMyString[26]) = 'J' AND F_ToCHR(sMyString[31]) = 'j' THEN
+			sStringDecipher := LEFT(sMyString,31);
+			sStringDecipher := RIGHT(sStringDecipher,4);
+			GVL_HMI.unJoystickCurrentNum := STRING_TO_UINT(sStringDecipher);
+		END_IF
+		
+
+	
+	
+		//////////////////////////////////////////////////////////
+		//LED Send
+		/////////////////////////////////////////////////////////
+		nLEDSend := GVL_Serial.nJoystickLED;
+		
+		GVL_Serial.bDeadmanLED := GVL_PLC.bLocalDeadmanInput; // AND P_Motion.bAllAxisOp AND GVL_PLC.stJoystickData.bCalibrated;// AND NOT GVL_Motion.bVertMoveEn AND NOT GVL_Motion.bHorizMoveEn;
+		
+		IF GVL_Serial.bDeadmanLED THEN
+			nLEDSend := nLEDSend + 7;
+		END_IF
+			
+		IF GVL_Serial.bZonLED THEN 
+			nLEDSend := nLEDSend + 14;
+		END_IF
+		
+		IF nLEDSend < 10 THEN
+			sMyStringSend := INT_TO_STRING(nLEDSend);
+		ELSE
+			sMyStringSend := F_ToCHR(INT_TO_BYTE(nLEDSend + 55));
+		END_IF
+	END_IF
+END_IF
+
+fbEL600x(
+	bEnable := GVL_Serial.bDeviceOn OR P_JoystickSetup.bSendEn OR btest AND FALSE,
+	sSendString := sMyStringSend,
+	TxBuffer:= GVL_Serial.TxBufferEL,
+	RxBuffer:= GVL_Serial.RxBufferEL);
+	
+IF fbEL600x.bStringReceived THEN
+	FOR i:=1 TO 19 DO
+		sSerialStringList[21-i] := sSerialStringList[20-i];
+	END_FOR
+	sSerialStringList[1] := fbEL600x.sReceivedString;
+END_IF
+
+fbTonSerialStream(IN:= NOT fbEL600x.bStringReceived AND NOT fbTonSerialStream.Q, PT := T#1S);
+IF fbTonSerialStream.Q AND NOT (sSerialStringList[1] = 'TIMEOUT') THEN
+	FOR i:=1 TO 19 DO
+		sSerialStringList[21-i] := sSerialStringList[20-i];
+	END_FOR
+	sSerialStringList[1] := 'TIMEOUT';	
+END_IF
+
+fbTONHeartbeatON(IN:= GVL_Serial.bCount, PT:= T#500MS);
+fbTONHeartbeatOFF(IN:= NOT GVL_Serial.bCount, PT:= T#500MS);
+IF fbTONHeartbeatON.Q OR fbTONHeartbeatOFF.Q THEN
+	GVL_Serial.bCommLoss := TRUE;
+	GVL_Serial.bEstop := FALSE;
+END_IF	]]></ST>
+    </Implementation>
+    <LineIds Name="P_SerialRemote">
+      <LineId Id="3" Count="129" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

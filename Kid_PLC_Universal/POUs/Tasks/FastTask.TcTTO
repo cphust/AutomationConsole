@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <Task Name="FastTask" Id="{5b97d756-0a5a-42a3-9987-60adbd0ea594}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>1000</CycleTime>
+    <Priority>2</Priority>
+    <PouCall>
+      <Name>P42_BrakeControl</Name>
+    </PouCall>
+    <TaskFBGuid>{0140bad1-fb7f-4bf1-a024-ae68963b4033}</TaskFBGuid>
+    <Fb_init>{00aed5e6-12d7-4ba8-a4a0-e672635b788f}</Fb_init>
+    <Fb_exit>{41458db7-ca89-42cd-bf95-bcb99bed9f83}</Fb_exit>
+    <CycleUpdate>{613a11d8-e77c-4c85-be03-e5d84dee7ef7}</CycleUpdate>
+    <PostCycleUpdate>{84981829-e046-4c01-872b-12b0d975f010}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

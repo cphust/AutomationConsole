@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <GVL Name="GVL_HMI" Id="{dc813951-22b0-45f9-9ac6-ecae2a4c765b}">
+    <Declaration><![CDATA[
+
+VAR_GLOBAL
+	Admin_Login : BOOL;
+	GlobalEstopCode :UDINT;
+	SetUserMax : BOOL;
+	SetUserMin : BOOL;
+	SetAdminMax : BOOL;
+	SetAdminMin : BOOL;
+	BlowOutLimits : BOOL;
+		//INT16		M07, P01	2007:01	RO
+Set_User_Home : BOOL;
+	rJoystick_Feedback_Calibrated			     	:	REAL; //Corrected output using the auto calibration info
+	MomControl_Bypass : BOOL;
+	SystemPLCProjectVersion				:	INT;		//INT16				Machine Control Studio Version (401812)
+	
+
+	//rJoystick_FeedbackHorizontal: LREAL;
+	//rJoystick_FeedbackVertical: LREAL;
+	
+	//Setup Joystick Mac Address Screen
+	//sJoystickMacAdd	: STRING; //HEX Entry
+	//bSetJoystickMac : BOOL;
+	//rWiredJoystick_Feedback: REAL;
+		unJoystickSelectNum: UINT;
+
+
+
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+	
+	Motor_Load_Parameters				:	INT := 1;		//INT16		M01, P28	2001:1C	RW for CPM80
+
+	bWirelessJoystickEn: BOOL;
+	bRem_SystemPowerEn					: BOOL;			// Enable remote system power without keyswitch (Remote keyswitch bypass)
+	
+END_VAR	]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <GVL Name="GVL_PLC" Id="{54815437-a470-41bf-a097-c8a0855ef300}">
+    <Declaration><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.03		0.00.01		Added udnBeckhoffErrorID and udnFlyhousePLCErrorID
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+VAR_GLOBAL
+	HostName 		: STRING;
+	sNetId			: T_AmsNetId := '';	 
+//	ParameterFile : UDINT;
+	
+	
+	
+	
+	
+	//nGlobal_Error_ID		: UINT;			
+	bGlobal_Error			: BOOL;
+
+	//nAnalog_Calibrate_Set	: BOOL;
+	//bAnalog_Calibrate		: BOOL;
+
+
+//	sCalibrate_Status		: STRING;
+//	bJoystick_Halt_Done		: BOOL;
+	
+	//Error Handling
+	//udnBeckhoffErrorID			: UDINT;
+	//udnFlyhousePLCErrorID		: UDINT;
+//	udnFlyhouseInternalErrorID	: UDINT;
+//	udnFlyhouseTotalErrorID		: UDINT;
+	//udnDriveErrorID				: UDINT;
+	bGlobal_Reset				: BOOL;
+	bGlobal_Error_String		: STRING(5000);
+	
+//	nDriveErrorSubID		AT %I*	: INT;
+	
+//******* External Safety System	 **********//	
+	bSafetyError				: BOOL;
+	bSafetyErrAckInput			: BOOL;
+
+	//bSafetySystemResetRequired	: BOOL;
+	//bExternalEstopComError		: BOOL;
+	//bExternalSystem_Reset		: BOOL;
+	bLocalEstopRestart			: BOOL;
+	//bExternalEstopRestart		: BOOL;
+	bLocalDeadmanInput: BOOL;
+	bLocalKeySwitchInput: BOOL;
+	bComTimeOutError : BOOL := FALSE;
+	
+	//bKidNotMoving : BOOL;
+	bKidOperational : BOOL;
+	
+	//lrJoystickVerticalOverride: LREAL;	
+	//lrJoystickHorizontalOverride: LREAL;
+	nDriveType: INT;	//0 : Groove Drum, 1 : Belt, tbd
+	bWiredDeadmanInput: BOOL;
+	
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+	//lrAnalog_Offset			: LREAL;
+	//lrAnalog_Cali_Max		: LREAL;
+	//lrAnalog_Cali_Min		: LREAL;
+	//bAnalog_Calibrate_Done 	: BOOL;
+	//lrAnalog_Deadband		: LREAL;
+
+	//stPointTestData : ARRAY [1..10] OF ST_PointTestData;
+	
+	//bExternalEstopEnInput		: BOOL;
+	//bMomTotalControl: BOOL;	
+	//bMomSafetyEn : BOOL;
+	//unSelectedJoystick : UINT;
+	bWiredJoystickEn : BOOL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

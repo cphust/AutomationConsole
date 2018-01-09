@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="MAIN" Id="{64add26d-f2ba-403c-b7f9-ac72076a8e37}" SpecialFunc="None">
+    <Declaration><![CDATA[ PROGRAM MAIN
+VAR_INPUT PERSISTENT
+	Kid : ARRAY [1..6] OF EtherCAT_Kid;
+
+END_VAR
+
+VAR_INPUT
+	JoyStickData AT %I* : DINT;
+	JoyStickReading : DINT;
+	ck : int;
+	tcRestart : PLC_Reset;
+		NumKids : INT := 2;
+	GlobalEstopActive : BOOL;
+	GlobalEstopCode : INT;
+	GlobalEstopReason : STRING(255);
+	JoyStickEstopActive : BOOL;
+	StartHome1 : BOOL;
+	Homing_Active : BOOL;
+	StartHome2 : BOOL;
+		xtar : DINT;
+	ytar : DINT;
+		JoyStick1DeadMan : BOOL;
+	JoyStick2DeadMan : BOOL;
+	jsResetter : BOOL;
+	onUpLimit : BOOL;
+	onDownLimit : BOOL;
+END_VAR
+VAR
+	maxError : INT;
+	ProcStart : NT_StartProcess;
+	fbUpsPulse: FB_Pulse;
+
+		MaxTimeOut_Reset : BOOL;
+	fbWritePersistentData: FB_WritePersistentData;
+		
+	GantryCollision : BOOL;
+
+	Mom_Estop_State : BOOL;
+	//GantryClearanceWindow : DINT := 450;
+	//HomeGantry : FB_HomeGantry;
+	//HomeCarriage : FB_HomeGantry;
+	TimeOutCheck : TIME;
+	MaxTimeOut : Time;
+	//	Kid : ARRAY [1..4] OF EtherCAT_Kid;
+	//DeadMan : BOOL;
+	//EStop : BOOL;
+	//MAIN. : STRING(5000);
+	
+	i: DINT;
+	Initialized : BOOL := FALSE;
+	Serial1 : FB_SerialCom_Remote;
+	Serial2 : FB_SerialCom_Kiosk;
+	//Patient1 : Patient;
+	//Patient2 : Patient;
+	//Patient3 : Patient;
+	//Patient4 : Patient;
+	
+
+	InterOpTimer : TON;
+	TimeOutSwitch : BOOL;
+	InterOpTimeout : BOOL;
+	Execute : BOOL := true;
+	GlobalReset : BOOL;
+	ResetCount : INT;
+
+
+
+	IN: INT;
+
+	//HMIUpdate : HMIUpdate;
+	//SerialRemoteFar : FB_SerialCom_Remote;
+	//SerialRemoteNear : FB_SerialCom_Remote;
+	
+	//JS1 : JoyStickGantryLogic;
+	//JS2 : JoystickGantryLogic;
+	checker : DINT;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+IF main.JoyStickEstopActive THEN main.GlobalEstopActive := TRUE;END_IF
+IF NOT Initialized THEN
+	//ProcStart(PathStr:='C:\users\administrator\desktop\setup.exe', dirname := 'C:\users\administrator\desktop', Start := TRUE);
+	FOR i := 1 TO NumKids DO		
+		MAIN.Kid[i].Checkin.KidID := DINT_TO_INT(i);	
+		MAIN.Kid[i].AxisID := DINT_TO_INT(i); 
+		KID[I].targetpos_FromMom_Raw := KID[I].HomedPosition_toMom;
+		KID[i].leaveEnabled := FALSE;
+	END_FOR 	
+	Initialized := TRUE;
+	RETURN;
+END_IF
+
+
+//HMIUpdate();
+
+InterOpTimer(IN:= TimeOutSwitch, PT:= T#1000S, Q=> InterOpTimeout, ET=> TimeOutCheck);
+
+if MaxTimeOut_Reset then MaxTimeOut := T#0s; MaxTimeOut_Reset := FALSE; END_IF
+IF TimeOutCheck > MaxTimeOut THEN MaxTimeout := TimeOutCheck; END_IF
+
+IF NOT TimeOutSwitch THEN TimeOutSwitch := NOT InterOpTimeout OR NOT TimeOutSwitch; END_IF
+IF InterOpTimeOut THEN GlobalEstopActive := TRUE; GlobalEstopReason := 'INTEROPTIMEOUT'; END_IF
+
+
+Joystick1Deadman := Joystick1Deadman AND NOT InterOpTimeout;
+
+
+
+
+FOR i := 1 TO NumKids DO
+	//MAIN.Kid[i].targetpos_FromMom_Raw := MAIN.Kid[1].HomedPosition_toMom;
+
+	IF JoyStickData > 98304 AND JoyStickData <> 10000 THEN 
+		
+		MAIN.Kid[i].RMT_DeadManPressed := TRUE; 
+	ELSIF JoyStickData <> 10000 THEN
+		MAIN.Kid[i].RMT_DeadManPressed := FALSE;
+	END_IF
+	
+	IF JoyStickData > 98304 THEN 
+			
+			JoyStickReading := (JoyStickData -98304 - 10000);
+			MAIN.Kid[1].modeVel_FromMom_Raw := ABS((JoyStickReading * 1500)/10000);
+			MAIN.Kid[1].modeAccel_FromMom_Raw := 3 * (((ABS(JoyStickReading) * 1200)/10000) +20);
+			MAIN.Kid[1].modeDecel_FromMom_Raw := 3 * 1200;
+			MAIN.Kid[1].targetpos_FromMom_Raw := MAIN.Kid[1].HomedPosition_toMom + JoyStickReading/20;	
+	END_IF
+		
+	IF MAIN.Kid[i].modeAccel_FromMom_Raw < 10 THEN Kid[i].modeAccel_FromMom_Raw := 10; END_IF 
+	//IF globalestopactive THEN kid[i].targetpos_FromMom_Raw := kid[i].HomedPosition_toMom; END_IF
+	IF GVL_HMI.GUIGlobalReset THEN GlobalReset := TRUE; GVL_HMI.GUIGlobalReset := FALSE; END_IF
+	IF GlobalReset THEN
+		MAIN.Kid[i].resetCOM := TRUE;
+		MAIN.Kid[i].SafteyReset := TRUE;
+		MAIN.Kid[i].bComTimeOutError := FALSE;
+		Kid[i].RMT_EstopActivate :=Mom_Estop_State;
+		InterOpTimeOut := FALSE;
+		timeoutSwitch := FALSE;
+		GlobalEstopActive := false;
+		GlobalEstopCode := 0;
+		joystickEstopActive := False;
+	END_IF
+	
+	IF Execute THEN
+		MAIN.Kid[i].CheckIn.momControl := TRUE;
+		IF(TimeOutCheck > T#500MS ) THEN   //this is the maximum allowed timeout when a deadman is pressed
+			MAIN.Kid[i].RMT_DeadManPressed := FALSE;
+		END_IF
+	ELSE
+		MAIN.Kid[i].CheckIn.momControl := FALSE;
+		MAIN.Kid[i].RMT_DeadManPressed := FALSE;
+	END_IF
+	
+		MAIN.Kid[i].CheckIn();
+END_FOR 
+
+IF GlobalReset AND NOT 
+((Kid[1].CheckIn.momControl_FromKid AND(MAIN.Kid[1].Checkin.SafteyTripped  OR kid[1].checkin.CommError_FromKid)) OR 
+ (Kid[2].CheckIn.momControl_FromKid AND (Kid[2].Checkin.SafteyTripped OR kid[2].checkin.CommError_FromKid)) OR
+//(Kid[3].CheckIn.momControl_FromKid AND(Kid[3].Checkin.SafteyTripped OR kid[3].checkin.CommError_FromKid)) OR
+//(Kid[4].CheckIn.momControl_FromKid AND(Kid[4].Checkin.SafteyTripped OR kid[4].checkin.CommError_FromKid)) OR
+//(Kid[5].CheckIn.momControl_FromKid AND(Kid[5].Checkin.SafteyTripped OR kid[5].checkin.CommError_FromKid)) OR
+//(Kid[6].CheckIn.momControl_FromKid AND(Kid[6].Checkin.SafteyTripped OR kid[6].checkin.CommError_FromKid)) OR
+						GlobalEstopActive)  THEN
+	GlobalReset:= FALSE;
+	ResetCount := 0;
+ELSIF GlobalReset THEN
+	GlobalEstopActive := FALSE;
+	ResetCount := ResetCount + 1;
+	IF ResetCount > 300 THEN GlobalReset := FALSE; ResetCount := 0; END_IF
+END_IF
+
+
+
+//JS1(HookX := kid[1], HookY := Kid[2], sm := SerialRemoteFar); js1.Patient[1] := GVL_HMI.Patient1; js1.Patient[2] := GVL_HMI.Patient2; js1.Patient[3] := GVL_HMI.Patient3; js1.Patient[4] := GVL_HMI.Patient4;
+//JS2(HookX := kid[3], HookY := Kid[4], sm := SerialRemoteNear); js2.Patient[1] := GVL_HMI.Patient1; js2.Patient[2] := GVL_HMI.Patient2; js2.Patient[3] := GVL_HMI.Patient3; js2.Patient[4] := GVL_HMI.Patient4;
+
+checker := checker + 1;
+
+i :=  Kid[1].HomedPosition_toMom; i := Kid[1].targetpos_FromMom_Raw; i := Kid[1].ScalingNumber; i := Kid[1].modeAccel_FromMom_RAW; i := Kid[1].modeVel_FromMom_RAW; i := Kid[1].ModeDecel_FromMom_RAW;
+i :=  Kid[2].HomedPosition_toMom;  i := Kid[2].targetpos_FromMom_Raw;i := Kid[2].ScalingNumber; i := Kid[2].modeAccel_FromMom_RAW; i := Kid[2].modeVel_FromMom_RAW; i := Kid[2].ModeDecel_FromMom_RAW;
+i :=  Kid[3].HomedPosition_toMom;  i := Kid[3].targetpos_FromMom_Raw;i := Kid[3].ScalingNumber; i := Kid[3].modeAccel_FromMom_RAW; i := Kid[2].modeVel_FromMom_RAW; i := Kid[3].ModeDecel_FromMom_RAW;
+i :=  Kid[4].HomedPosition_toMom; i := Kid[4].targetpos_FromMom_Raw;  i := Kid[4].ScalingNumber; i := Kid[4].modeAccel_FromMom_RAW; i := Kid[2].modeVel_FromMom_RAW; i := Kid[3].ModeDecel_FromMom_RAW;
+
+
+
+
+i := MAIN.Kid[1].UpdateWord_toMom;
+i := MAIN.Kid[2].UpdateWord_toMom;
+i := MAIN.Kid[3].UpdateWord_toMom;
+i := MAIN.Kid[4].UpdateWord_toMom;
+i := MAIN.Kid[5].UpdateWord_toMom;
+i := MAIN.Kid[6].UpdateWord_toMom;
+
+
+WriteEtherCAT();
+
+fbUpsPulse(bEnable:= TRUE, tTimeOn:= T#100MS, tTimeOff:= T#30S, bPulse=> );
+
+
+	in := in + 1;
+	
+	i := 2;
+	ck :=DINT_TO_INT(Kid[1].targetpos_FromMom_Raw );
+IF MAIN.Kid[1].targetpos_FromMom_Raw < 0 THEN  MAIN.Kid[1].targetpos_FromMom_Raw := 0; END_IF
+IF MAIN.Kid[1].targetpos_FromMom_Raw > 12000 THEN  MAIN.Kid[1].targetpos_FromMom_Raw := 0; END_IF
+
+	FOR i := 1 TO NumKids DO
+		
+		IF ABS(MAIN.Kid[i].HomedPosition_toMom - MAIN.Kid[1].HomedPosition_toMom) > maxError THEN maxError := DINT_TO_INT(ABS(MAIN.Kid[i].HomedPosition_toMom - MAIN.Kid[1].HomedPosition_toMom)); END_IF
+		MAIN.Kid[i].targetpos_FromMom_Raw := MAIN.Kid[1].targetpos_FromMom_Raw;
+		MAIN.Kid[i].modeVel_FromMom_Raw := MAIN.Kid[1].modeVel_FromMom_Raw + (ABS((MAIN.Kid[i].HomedPosition_toMom - MAIN.Kid[1].HomedPosition_toMom)) MOD 100);
+		MAIN.Kid[i].modeAccel_FromMom_Raw := MAIN.Kid[1].modeAccel_FromMom_Raw + ABS((MAIN.Kid[i].HomedPosition_toMom - MAIN.Kid[1].HomedPosition_toMom)) MOD 50;
+		MAIN.Kid[i].modeDecel_FromMom_Raw := MAIN.Kid[1].modeDecel_FromMom_Raw + ABS((MAIN.Kid[i].HomedPosition_toMom - MAIN.Kid[1].HomedPosition_toMom)) MOD 50;
+		MAIN.Kid[i].ScalingNumber := MAIN.Kid[1].ScalingNumber;
+		MAIN.Kid[i].RMT_DeadManPressed := MAIN.Kid[1].RMT_DeadManPressed;
+		onDownLimit := FALSE;
+		onUpLimit := FALSE;
+		IF(MAIN.Kid[i].IsHardDownLimitReached> 0 AND MAIN.Kid[i].targetpos_FromMom_Raw <= MAIN.Kid[1].targetpos_FromMom_Raw) THEN onDownLimit := TRUE; END_IF
+		IF(MAIN.Kid[i].IsHardUpLimitReached > 0 AND MAIN.Kid[i].targetpos_FromMom_Raw >= MAIN.Kid[1].targetpos_FromMom_Raw) THEN onUpLimit := TRUE; END_IF
+	END_FOR
+	
+	
+	FOR i := 1 TO NumKids DO
+		IF(onUpLimit OR onDownLimit) THEN 
+		   MAIN.Kid[i].RMT_DeadManPressed := FALSE;
+ // MAIN.GlobalEstopActive := TRUE;
+		END_IF
+	END_FOR
+	
+	IF JoyStickData = 10000 AND NOT jsResetter  THEN jsResetter :=TRUE; GlobalEstopActive := TRUE; jsResetter := TRUE; END_IF
+	IF jsResetter AND JoyStickData <> 10000 THEN GlobalReset := TRUE; jsResetter := FALSE; END_IF
+	//IF TimeOutCheck > T#60S THEN
+	//	tcRestart(RESET := TRUE);
+	//END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="979" Count="0" />
+      <LineId Id="1716" Count="0" />
+      <LineId Id="1212" Count="0" />
+      <LineId Id="3" Count="0" />
+      <LineId Id="1542" Count="0" />
+      <LineId Id="4" Count="0" />
+      <LineId Id="249" Count="1" />
+      <LineId Id="926" Count="0" />
+      <LineId Id="2494" Count="0" />
+      <LineId Id="252" Count="0" />
+      <LineId Id="1414" Count="0" />
+      <LineId Id="1345" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="1342" Count="1" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="1344" Count="0" />
+      <LineId Id="188" Count="0" />
+      <LineId Id="2103" Count="0" />
+      <LineId Id="1478" Count="0" />
+      <LineId Id="872" Count="0" />
+      <LineId Id="195" Count="0" />
+      <LineId Id="190" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="412" Count="0" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="2580" Count="0" />
+      <LineId Id="2569" Count="0" />
+      <LineId Id="2841" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="2673" Count="0" />
+      <LineId Id="2842" Count="0" />
+      <LineId Id="2582" Count="0" />
+      <LineId Id="2840" Count="0" />
+      <LineId Id="2591" Count="0" />
+      <LineId Id="2593" Count="0" />
+      <LineId Id="2596" Count="0" />
+      <LineId Id="2592" Count="0" />
+      <LineId Id="2598" Count="0" />
+      <LineId Id="2584" Count="0" />
+      <LineId Id="2839" Count="0" />
+      <LineId Id="2585" Count="0" />
+      <LineId Id="2587" Count="2" />
+      <LineId Id="2597" Count="0" />
+      <LineId Id="2583" Count="0" />
+      <LineId Id="2590" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="1034" Count="0" />
+      <LineId Id="1146" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="347" Count="0" />
+      <LineId Id="406" Count="0" />
+      <LineId Id="507" Count="0" />
+      <LineId Id="505" Count="0" />
+      <LineId Id="1091" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="506" Count="0" />
+      <LineId Id="15" Count="2" />
+      <LineId Id="155" Count="1" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="18" Count="2" />
+      <LineId Id="2581" Count="0" />
+      <LineId Id="22" Count="1" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="580" Count="0" />
+      <LineId Id="2175" Count="0" />
+      <LineId Id="581" Count="0" />
+      <LineId Id="1941" Count="4" />
+      <LineId Id="1791" Count="0" />
+      <LineId Id="653" Count="0" />
+      <LineId Id="651" Count="0" />
+      <LineId Id="1790" Count="0" />
+      <LineId Id="652" Count="0" />
+      <LineId Id="654" Count="0" />
+      <LineId Id="650" Count="0" />
+      <LineId Id="819" Count="0" />
+      <LineId Id="571" Count="0" />
+      <LineId Id="817" Count="0" />
+      <LineId Id="1349" Count="1" />
+      <LineId Id="1347" Count="0" />
+      <LineId Id="513" Count="1" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="2023" Count="0" />
+      <LineId Id="2027" Count="0" />
+      <LineId Id="2030" Count="0" />
+      <LineId Id="2029" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="708" Count="0" />
+      <LineId Id="707" Count="0" />
+      <LineId Id="2017" Count="5" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="1633" Count="1" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="1866" Count="0" />
+      <LineId Id="2253" Count="0" />
+      <LineId Id="2249" Count="0" />
+      <LineId Id="2675" Count="0" />
+      <LineId Id="2942" Count="1" />
+      <LineId Id="2327" Count="0" />
+      <LineId Id="2850" Count="0" />
+      <LineId Id="2837" Count="0" />
+      <LineId Id="2676" Count="0" />
+      <LineId Id="2681" Count="1" />
+      <LineId Id="2679" Count="0" />
+      <LineId Id="2760" Count="0" />
+      <LineId Id="2835" Count="0" />
+      <LineId Id="2857" Count="1" />
+      <LineId Id="2855" Count="1" />
+      <LineId Id="2677" Count="0" />
+      <LineId Id="2843" Count="1" />
+      <LineId Id="2852" Count="1" />
+      <LineId Id="2937" Count="0" />
+      <LineId Id="2940" Count="0" />
+      <LineId Id="2938" Count="0" />
+      <LineId Id="2854" Count="0" />
+      <LineId Id="2845" Count="2" />
+      <LineId Id="1867" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

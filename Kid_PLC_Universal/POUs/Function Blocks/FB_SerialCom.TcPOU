@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_SerialCom" Id="{91c7a3c3-4ecb-45a3-a114-7815eda704db}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SerialCom
+VAR_IN_OUT
+	TxBuffer	: ComBuffer;
+	RxBuffer	: ComBuffer;
+END_VAR
+VAR
+	Timer		: TON := (PT:=T#175MS);
+	fbSend		: SendString;
+	bSendBusy	: BOOL;
+	eSendErrorID: ComError_t;
+
+	fbReceive		: ReceiveString;
+	sReceivedString	: STRING;
+
+	bReceiveBusy	: BOOL;
+	bReceiveError	: BOOL;
+	eReceiveErrorID	: ComError_t;
+	bReceiveTimeout	: BOOL;
+	nReceiveCounter	: UDINT;
+
+	fbF_Trig: F_TRIG;
+	nStringLength: INT;
+	sStringWithoutPrefix: STRING(255);
+END_VAR
+VAR_INPUT
+	bEnable : BOOL;
+	sSendString: STRING;
+END_VAR
+
+VAR_OUTPUT
+	bStringReceived	: BOOL;
+	sLastReceivedString: STRING;
+	bDone : BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// Call the send block every second to repeat the transmission.
+// Also call the block as long as it is busy to finish a transmission.
+Timer(IN:=bEnable);
+IF Timer.Q OR bSendBusy THEN
+	Timer(IN:=FALSE); (* reset timer *)
+	fbSend(	SendString:= sSendString,
+			TXbuffer:= TxBuffer,
+			Busy=> bSendBusy,
+			Error=> );
+	IF fbSend.Error <> COMERROR_NOERROR THEN
+		eSendErrorID := fbSend.Error;
+	END_IF
+END_IF
+
+fbF_Trig(CLK:=bSendBusy);
+bDone := bSendBusy;
+	
+//	Receive string data:
+//	The block receives any data strings beginning with a STX ($02) and ending with an ETX ($03) character.	
+fbReceive(
+	Prefix:= '$N',//'$R',//'$02',
+	Suffix:= '$R',//'$03',
+	Timeout:= T#1s,
+	ReceivedString:= sReceivedString,
+	RXbuffer:= RxBuffer,
+	StringReceived=> bStringReceived,
+	Busy=> bReceiveBusy,
+	Error=> ,
+	RxTimeout=> bReceiveTimeout );
+IF fbReceive.Error <> COMERROR_NOERROR THEN
+	eReceiveErrorID := fbReceive.Error;
+END_IF
+IF bStringReceived THEN
+	nReceiveCounter := nReceiveCounter + 1;
+	sStringWithoutPrefix := DELETE(sReceivedString, LEN := 1, POS := 1);
+	nStringLength := LEN(sStringWithoutPrefix);
+	sLastReceivedString := DELETE(sStringWithoutPrefix, LEN := 2, POS := nStringLength);	
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SerialCom">
+      <LineId Id="3" Count="38" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

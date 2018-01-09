@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <GVL Name="GVL_DriveParameters" Id="{5e804fb3-1d36-4db7-bd1b-9cc0ef21af36}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+	//stCoEDataArray_Write	:	ST_CoEDataArray;
+	//stCoEDataArray_Read	 	:	ST_CoEDataArray;
+	
+	
+	// Error when reading save all parameter
+	//bFB_CoE_Read_Save_Error	: BOOL;
+	
+	// Error when writing save all parameter
+	//bFB_CoE_Write_Save_Error: BOOL;
+	
+													//Data Type	Address		Index	Access
+	dnCurrentMagnitude		AT %I* 	:	DINT;		//INT32		M4, P01		2004:01	RO
+	//rMotor_Speed			AT %I* 	:	REAL;		//INT32		M3, P02		2003:02	RO
+	//dnPosition_Current		AT %I* 	:	DINT;		//INT32		M33, P04			RO
+	
+//	dnMotor_Rated_Speed				:	DINT;		//INT32		M05, P08	2005:08	RW
+	
+	nBrakeResistorAccum		AT %I*	:	INT;		//INT16		M10, P39	
+	
+	nP1_MotorThermistor		AT %I*	:	INT;		//INT16		M03, P122			RO	In deg. C.
+	//rPosition_Error_Dist	AT %I*	:	REAL;		//Actual Error Window of Axis
+	//dwAxis_Status			AT %I*	:	DWORD;		//Axis Status 32bit
+	controlWord  AT %Q* : BITARR16; //0x6040
+	
+
+	
+
+	
+	
+	targetpos_FromMom : DINT;
+	modeVel_FromMom : DINT;
+	modeAccel_FromMom : DINT ;
+	modeDecel_FromMom : DINT ;
+	//READ ONLY PARAMETERS, Include home offsets, scaling, and flipped directions
+	Normalized_Position : DINT;
+	Normalized_Acceleration : DINT;
+	Normalized_Min_Limit : DINT;
+	Normalized_Max_Limit : DINT; 
+	
+	initFile : UINT;
+	bLoadParameters_Done : BOOL;
+END_VAR
+
+
+
+
+VAR_GLOBAL CONSTANT
+	
+	// Number of Parameters in Array
+	nNumOfParameters: USINT := 67;			//future: see if this can change dynamically based on parameters listed
+	
+	
+END_VAR
+VAR_GLOBAL PERSISTENT
+	
+	lrKid_1_Position_Bias: LREAL;		//Position Offset for Kid 1 Encoder
+
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

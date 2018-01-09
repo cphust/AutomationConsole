@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <DUT Name="ST_CoEDataArray" Id="{7fcd8037-57fb-4341-bce9-127057462465}">
+    <Declaration><![CDATA[
+
+// ST_CoEdata.nDataLen cannot be '0' or R/W will skip the CoE Data
+
+TYPE ST_CoEDataArray :
+STRUCT
+		stCoEData : ARRAY [1..nNumOfParameters] OF ST_CoEdata;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

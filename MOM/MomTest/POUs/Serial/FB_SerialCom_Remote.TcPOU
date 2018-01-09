@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_SerialCom_Remote" Id="{0e9193bd-3adb-48d2-a995-05c6ecdfd05b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SerialCom_Remote
+
+VAR
+	x : INT :=0; 
+	FRAME : ARRAY [1..10 ] OF BYTE ; 
+	TxBuffer	: ComBuffer;
+	RxBuffer	: ComBuffer;
+		NextOffset : INT;
+	yRead : INT;
+	xRead : INT; 
+	ButtonStateRead : INT;
+	ScreenStateRead : INT;
+	bCount: INT;
+		(* background communication with the EL6001 terminal *)
+	fbEL6002Ctrl		: SerialLineControl;
+	(* 	I/O variables for a EL6001 terminal*)
+	stIn_EL6002B AT %I*	: EL6inData22B;	(* linked to the EL6001 in the TwinCAT System Manager *)
+	stOut_EL6002B AT %Q*	: EL6outData22B;(* linked to the EL6001 in the TwinCAT System Manager *)
+	SendTimer		: TON;
+	fbSend		: SendString;
+	bSendBusy	: BOOL;
+	eSendErrorID: ComError_t;
+	fbReceive		: ReceiveData;
+	AgeTimer : TON;
+	Disconnected : BOOL;
+	CalmDown : TIME := T#900MS;
+END_VAR
+
+VAR_INPUT
+	Timeout : TIME := T#3S; //Timespan to concider the remote disconnected
+	sSendString: STRING;
+	ScreenCommanded : BYTE;
+	JoyStickNumber : INT;
+END_VAR
+
+VAR_OUTPUT
+	yAxis : INT:=0; //Up/Down result of Joystick 50 to -50
+	xAxis : INT:=0; //Left/Right Result of Joystick 50 to -50
+	DeadmanPressed: INT:=0; //Resulting consecutive frames with DeadmanPressed (Positive) or not pressed 
+	EstopPressed: INT:=0; //Resulting consecutive frames with DeadmanPressed (Positive) or not pressed 
+	ZAxisPressed: INT:=0; //Resulting consecutive frames with DeadmanPressed (Positive) or not pressed 
+	SyncPressed : INT:=0; //Resulting consecutive frames with DeadmanPressed (Positive) or not pressed 
+	Age : TIME;
+	Connected : BOOL;
+	ScreenActive : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+(* background communication with the EL6001 terminal *)
+AgeTimer(IN:=TRUE, PT := Timeout, ET=> AGE, Q=> Disconnected); Connected := NOT Disconnected;
+
+fbEL6002Ctrl(	Mode:= SERIALLINEMODE_EL6_22B, 	pComIn:= ADR(stIn_EL6002B),	pComOut:= ADR(stOut_EL6002B), 	SizeComIn:= SIZEOF(stIn_EL6002B), 	TxBuffer:= TxBuffer, 	RxBuffer:= RxBuffer, );
+
+// Call the send block every second to repeat the transmission.
+// Also call the block as long as it is busy to finish a transmission.
+IF ScreenActive = ScreenCommanded OR LEN(sSendString)> 2 OR txbuffer.count > 5 THEN
+	SendTimer(IN:=TRUE, PT := T#50MS + CalmDown);
+	
+	ELSE
+	SendTimer(IN:=TRUE, PT := T#50MS );
+
+END_IF
+IF TXBuffer.Count > 10 THEN sSendString := ''; END_IF
+IF SendTimer.Q OR bSendBusy THEN
+	SendTimer(IN:=FALSE); (* reset timer *)
+	fbSend(	SendString:=  sSendString,	TXbuffer:= TxBuffer,	Busy=> bSendBusy,	Error=> );
+	IF fbSend.Error <> COMERROR_NOERROR THEN
+		eSendErrorID := fbSend.Error;
+	END_IF
+END_IF
+
+
+IF RxBuffer.Count > 9 THEN
+	//IF LEN(sSendString) <= 1 THEN sSendString := ''; END_IF
+	fbReceive(pReceiveData :=ADR(FRAME), SizeReceiveData := SIZEOF(FRAME),	 DataReceived =>,	 RxBuffer := RXBUFFER);
+	FOR X := 1 TO 5 DO
+		IF FRAME[x]= 116 AND FRAME[x+1] = 100 AND FRAME[x + 2]= 114 AND FRAME[x+3]=58  THEN sSendString := CONCAT(DINT_TO_STRING(100000 + JoyStickNumber), '$R$N');  END_IF //filter:
+		IF FRAME[x]= 76 AND FRAME[x+1] = 79 AND FRAME[x + 2]= 83 AND FRAME[x+3]=83 THEN sSendString := CONCAT(DINT_TO_STRING(100000 + JoyStickNumber), '$R$N');  END_IF  //RF LOSS
+		IF FRAME[x] = 10 AND FRAME[x+5] = 13 THEN
+			//IF ScreenCommanded = 74 THEN sSendString := 'J' ; END_IF
+sSendString := F_ToChR(ScreenCommanded); 
+			
+			yRead := FRAME[x+1] ;
+			xRead := FRAME[x+2];
+			ButtonStateRead := BYTE_TO_INT(Frame[x+3]);
+			ScreenStateRead := Frame[x+4];
+			
+		//IF ((ButtonStateRead + xAxis + yAxis + ScreenStateRead) MOD 2)  = BOOL_TO_INT(ButtonStateRead > 64) THEN 
+				ButtonStateRead := ButtonStateRead MOD 64;   //buttonstates 7th bit is used for parity 0==odd 1==even (64 = EVEN) 
+				yAxis := yRead -150;
+				xAxis := xRead - 150;
+				NextOffSet := X;
+				ScreenActive := ScreenStateRead;
+				IF ButtonStateRead >= 32 THEN SyncPressed := BOOL_TO_INT(SyncPressed <=0) * (SyncPressed -1); ButtonStateRead := ButtonStateRead - 32; ELSE SyncPressed := BOOL_TO_INT(SyncPressed >=0) * (SyncPressed + 1); END_IF
+				IF ButtonStateRead >= 16  THEN ZAxisPressed := BOOL_TO_INT(ZAxisPressed <=0) * (ZAxisPressed -1); ButtonStateRead := ButtonStateRead - 16; ELSE ZAxisPressed := BOOL_TO_INT(ZAxisPressed >=0) *(ZaxisPressed + 1); END_IF
+				IF ButtonStateRead < 8  THEN EstopPressed := BOOL_TO_INT(EstopPressed<= 0) * (EstopPressed -1);  ELSE EStopPressed := BOOL_TO_INT(EStopPressed >= 0) * (EStopPressed + 1); ButtonStateRead := (ButtonStateRead - 8); END_IF
+				IF ButtonStateRead >= 3  THEN DeadManPressed :=  BOOL_TO_INT(DeadManPressed <= 0) *(DeadManPressed - 1); ButtonStateRead := ButtonStateRead - 4; ELSE DeadmanPressed := BOOL_TO_INT(DeadManPressed >= 0) * (DeadmanPressed + 1); END_IF
+				IF SyncPressed > 100 THEN SyncPressed := 100; END_IF; IF SyncPressed < -100 THEN SyncPressed := -100; END_IF
+				IF ZAxisPressed > 1000 THEN ZAxisPressed := 100; END_IF; IF ZAxisPressed < -1000 THEN ZAxisPressed := -100; END_IF
+				IF EStopPressed > 1000 THEN EStopPressed := 100; END_IF; IF EStopPressed < -1000 THEN EStopPressed := -100; END_IF
+				IF DeadManPressed > 1000 THEN DeadManPressed := 100; END_IF; IF DeadManPressed < -1000 THEN DeadManPressed := -100; END_IF
+				AgeTimer(in:=False);
+			//FRAME[X+ 1] :=0; FRAME[X+ 2] :=0; FRAME[X+ 3] :=0; FRAME[X+ 4] :=0; FRAME[X+ 5] :=0;
+		//	ELSE 
+					bCount := bCount +1;
+					
+					
+			//END_IF
+			
+			
+		END_IF
+		FRAME[X] :=0;
+	END_FOR
+
+END_IF
+
+IF AgeTimer.Q THEN 
+	ScreenActive := 72;
+	//ScreenCommanded := 72; 
+	sSendString := CONCAT(DINT_TO_STRING(100000 + JoyStickNumber), '$R$N');
+ELSIF sCREENcOMMANDED = 72 THEN
+	//ScreenCommanded := 73;
+ END_IF
+//	Age := Age + T#1MS; //IF THIS IS NOT THE CYCLE TIME OF THE TASK IT WILL NOT BE ACCURATE;
+
+IF ScreenActive = 0 THEN ScreenActive := 72; END_IF
+	
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SerialCom_Remote">
+      <LineId Id="105" Count="1" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="729" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="3" Count="1" />
+      <LineId Id="792" Count="1" />
+      <LineId Id="844" Count="0" />
+      <LineId Id="795" Count="2" />
+      <LineId Id="794" Count="0" />
+      <LineId Id="5" Count="3" />
+      <LineId Id="12" Count="3" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="428" Count="0" />
+      <LineId Id="427" Count="0" />
+      <LineId Id="680" Count="0" />
+      <LineId Id="396" Count="0" />
+      <LineId Id="665" Count="0" />
+      <LineId Id="676" Count="0" />
+      <LineId Id="678" Count="0" />
+      <LineId Id="666" Count="0" />
+      <LineId Id="679" Count="0" />
+      <LineId Id="744" Count="0" />
+      <LineId Id="668" Count="0" />
+      <LineId Id="670" Count="2" />
+      <LineId Id="702" Count="1" />
+      <LineId Id="674" Count="0" />
+      <LineId Id="697" Count="0" />
+      <LineId Id="673" Count="0" />
+      <LineId Id="700" Count="0" />
+      <LineId Id="745" Count="0" />
+      <LineId Id="696" Count="0" />
+      <LineId Id="684" Count="0" />
+      <LineId Id="692" Count="0" />
+      <LineId Id="695" Count="0" />
+      <LineId Id="694" Count="0" />
+      <LineId Id="708" Count="0" />
+      <LineId Id="710" Count="2" />
+      <LineId Id="727" Count="1" />
+      <LineId Id="690" Count="0" />
+      <LineId Id="707" Count="0" />
+      <LineId Id="738" Count="0" />
+      <LineId Id="726" Count="0" />
+      <LineId Id="701" Count="0" />
+      <LineId Id="704" Count="1" />
+      <LineId Id="669" Count="0" />
+      <LineId Id="706" Count="0" />
+      <LineId Id="667" Count="0" />
+      <LineId Id="725" Count="0" />
+      <LineId Id="414" Count="0" />
+      <LineId Id="737" Count="0" />
+      <LineId Id="722" Count="0" />
+      <LineId Id="891" Count="0" />
+      <LineId Id="739" Count="1" />
+      <LineId Id="742" Count="1" />
+      <LineId Id="741" Count="0" />
+      <LineId Id="603" Count="0" />
+      <LineId Id="398" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="252" Count="1" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

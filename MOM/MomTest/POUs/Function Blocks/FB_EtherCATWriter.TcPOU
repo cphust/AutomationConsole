@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_EtherCATWriter" Id="{57030996-5170-4e6f-9150-4cbb01864ddc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EtherCATWriter
+VAR_INPUT
+	KidID : INT :=0;
+	IDToWrite : USINT :=0;
+	lrEncoder_ScalingNum : LREAL;
+	Admin_Min :DINT;
+	Admin_Max :DINT;
+	Direction_Flipped : BOOL;
+	lrDistance_1_Motor_Rev : LREAL;
+	QuickStop_Accel : DINT;
+	lrDecel_For_EStop : DINT;
+	ParameterID_ToKid AT %Q* : USINT := 1;
+	ParameterID_FromKid AT %I* : USINT;
+	
+END_VAR
+VAR_OUTPUT
+//	WrittenAll : BOOL := FALSE;
+END_VAR
+
+VAR
+	
+
+	DataInt : DINT;
+	RecievedData : ARRAY [1..256] OF INT; //used to count reads of each parameter
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF KidID = 0 THEN RETURN; END_IF
+//ParameterWord_FromMom consists of 32 bytes. The first(greatest) 8 bytes ID the Variable to write and the last 24 include the data. 
+// ParameterID		Parameter To Write					Format
+// 1				GVL_Motion.lrEncoder_ScalingNum		1/DATAINT := ScalingNum
+// 2				GVL_Index.Admin_Max					:= 512 * DataInt (largest bit is sign)	
+// 3				GVL_Index.Admin_Min					:= 	512 * DataInt (largest bit is sign)	
+// 4				GVL_Index.Direction_Flipped			>0 		
+// 5				GVL_Motion.lrDistance_1_Motor_Rev	:= ?????????????????????????
+// 6				GVL_Speeds.QuickStop_Accel		
+// 7 				GVL_Speeds.lrDecel_For_EStop		:=?
+ ParameterID_ToKid := IDToWrite;
+
+CASE IDToWrite OF
+//1: 	MAIN.Kid[KidID].ParameterWord_ToKid := LREAL_TO_DINT(lrEncoder_ScalingNum) ;
+//2: 	MAIN.Kid[KidID].ParameterWord_ToKid := Admin_Max ;
+//3: 	MAIN.Kid[KidID].ParameterWord_ToKid := Admin_Min ;
+//4:  MAIN.Kid[KidID].ParameterWord_ToKid := BOOL_TO_INT(Direction_Flipped) ;
+//5: 	MAIN.Kid[KidID].ParameterWord_ToKid := LREAL_TO_DINT(lrDistance_1_Motor_Rev) ;
+//6:	MAIN.Kid[KidID].ParameterWord_ToKid := QuickStop_Accel ;
+//7:	MAIN.Kid[KidID].ParameterWord_ToKid := lrDecel_For_EStop ;
+//8:  MAIN.Kid[KidID].ParameterWord_ToKid  := MAIN.Kid[KidID].maxVelRef;
+ELSE
+	IDToWrite := 0;
+END_CASE
+
+IF ParameterID_FromKid = ParameterID_ToKid THEN
+	IDToWrite := IDToWrite + 1;
+	ELSIF IDToWrite = 0 THEN
+		//IDToWrite := 1;
+END_IF
+
+//IF MAIN.Kid[KidID].ParameterWord_ToKid < 16777216 THEN
+//	MAIN.Kid[KidID].ParameterWord_ToKid  := MAIN.Kid[KidID].ParameterWord_ToKid + (16777216 * IDToWrite);
+//END_IF
+//RecievedData[ID] := RecievedData[ID] + 1;]]></ST>
+    </Implementation>
+    <LineIds Name="FB_EtherCATWriter">
+      <LineId Id="68" Count="0" />
+      <LineId Id="10" Count="7" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="22" Count="9" />
+      <LineId Id="109" Count="1" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="115" Count="1" />
+      <LineId Id="113" Count="1" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="79" Count="1" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

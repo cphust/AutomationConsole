@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="P2_DriveLoad" Id="{d95ea949-7ad0-4176-be6d-d221148a2996}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P2_DriveLoad
+VAR
+
+
+
+
+	
+// Loads CMP80M & M700 initial parameters.
+	//CMP80M	: INT;
+	//netId	: INT;
+	//port	: INT;
+	//bLoadParameters_Done: BOOL;
+	
+
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+GVL_Index.Decel_For_DeadMan := 5000;
+GVL_Index.Decel_For_Estop := 8000;
+GVL_Motion.rHoist_MaxVelocity := 1000;
+//GVL_Speeds.rAccel_With_MinLoad :=1000;
+//GVL_Speeds.rDecel_With_MinLoad := 1000;
+//nMotion_Command := 10;
+KidAxis.modeAcc := 800;
+GVL_Motion.lrDistance_1_Motor_Rev := 300;
+//GVL_Motion.rMotor_GearRatio := 1;
+//GVL_Motion.tMotorBrake_Delay := T#15S;
+//GVL_Motion.lrDrum_Diameter := 300;
+GVL_Motion.lrEncoder_ScalingNum := 0.00092327;
+bLoadParameters_Done				:=	TRUE;
+
+(*
+//*****************************************************************Notes**********************************************************\\
+
+  	The P_Drive_Verification program confirms that the drive parameters are set according to the motor that it is currently set up as.
+	This will prevent any motion from occuring and throw an error if the parameters aren't set correctly.
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Brent Miller			 	2016.04.08		0.00.01		Initial Code.
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+
+
+//	Has Drive already been verified?
+
+IF NOT GVL_Modes.bDrive_Verified	THEN
+		
+	//This code will run if drive settings have not been verified
+	//Will return a True value to bDrive_Verified
+	//The HMI will need to load settings by setting a value of 1-100 in the Motor_Load_Parameters tag
+	CASE GVL_HMI.Motor_Load_Parameters OF
+		
+	0:
+		GVL_HMI.Motor_Load_Parameters	:= 1;
+		A3_LoadParameters_Tracking();
+		IF bLoadParameters_Done THEN
+			GVL_Modes.bDrive_Verified := TRUE;
+		END_IF
+		
+	1:
+		A1_LoadParameters_ZipLift_CMP80M();
+	//	GVL_HMI.Motor_Load_Parameters	:= 0;
+		IF bLoadParameters_Done THEN
+			GVL_Modes.bDrive_Verified := TRUE;
+		END_IF
+		
+	2:
+		A2_LoadParameters_ZipLift_FM050();	//
+	//	GVL_HMI.Motor_Load_Parameters	:= 0;
+		IF bLoadParameters_Done THEN
+			GVL_Modes.bDrive_Verified := TRUE;
+		END_IF
+		
+	ELSE	//if not any of the values listed above in Case statement then run this code
+		//Figure out a way to trip the drive or prevent system from operating if bDrive_Verified = FALSE
+		//pprasinos 6/9/2017 GVL_HMI.Drive_Status_Trip 	:=	E_Custom_Trip_Codes.System_Model_Unknown;
+		
+		//After the trip is Ack. then this needs to clear and set back to "OK"
+		//pprasinos 6/9/2017 GVL_HMI.Drive_Status_Trip	:=	E_Custom_Trip_Codes.OK;
+	
+		
+	END_CASE;
+	
+	
+	
+END_IF
+
+
+
+
+*)
+]]></ST>
+    </Implementation>
+    <Action Name="A1_LoadParameters_ZipLift_CMP80M" Id="{f2719792-c7b1-4f91-81ed-b3619ef7c9fa}">
+      <Implementation>
+        <ST><![CDATA[
+GVL_Index.Decel_For_DeadMan := 2000;
+GVL_Index.Decel_For_Estop := 4000;
+GVL_Motion.rHoist_MaxVelocity := 1500;
+//GVL_Speeds.rAccel_With_MinLoad :=1000;
+//GVL_Speeds.rDecel_With_MinLoad := 1000;
+//nMotion_Command := 10;
+KidAxis.modeAcc := 1200;
+GVL_Motion.lrDistance_1_Motor_Rev := 300;
+//GVL_Motion.rMotor_GearRatio := 1;
+//GVL_Motion.tMotorBrake_Delay := T#15S;
+//GVL_Motion.lrDrum_Diameter := 300;
+GVL_Motion.lrEncoder_ScalingNum := 0.00092327;
+bLoadParameters_Done				:=	TRUE;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A3_LoadParameters_Tracking" Id="{c3f0e484-6a30-4250-92ce-63d58c88b855}">
+      <Implementation>
+        <ST><![CDATA[
+GVL_Index.Decel_For_DeadMan := 5000;
+GVL_Index.Decel_For_Estop := 6000;
+GVL_Motion.rHoist_MaxVelocity := 1000;
+GVL_DriveParameters.bLoadParameters_Done := TRUE;
+//GVL_Speeds.rAccel_With_MinLoad :=1000;
+//GVL_Speeds.rDecel_With_MinLoad := 1000;
+nMotion_Command := 10;
+KidAxis.modeAcc := 800;
+GVL_Motion.lrDistance_1_Motor_Rev := 300;
+//GVL_Motion.rMotor_GearRatio := 1;
+//GVL_Motion.tMotorBrake_Delay := T#15S;
+//GVL_Motion.lrDrum_Diameter := 300;
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P2_DriveLoad">
+      <LineId Id="98" Count="0" />
+      <LineId Id="100" Count="13" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="3" Count="27" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="78" Count="1" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="31" Count="32" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P2_DriveLoad.A1_LoadParameters_ZipLift_CMP80M">
+      <LineId Id="509" Count="3" />
+      <LineId Id="514" Count="7" />
+      <LineId Id="506" Count="0" />
+      <LineId Id="522" Count="0" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P2_DriveLoad.A3_LoadParameters_Tracking">
+      <LineId Id="24" Count="0" />
+      <LineId Id="13" Count="2" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

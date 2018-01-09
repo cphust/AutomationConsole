@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_IntelligentFlasher" Id="{0cba9531-362c-4e72-b62d-cacb9c63f84b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_IntelligentFlasher
+VAR_INPUT
+	nNumOfErrorConditions :	INT;
+	nErrorID	: INT;
+	bEnable		: BOOL;
+	
+END_VAR
+VAR_OUTPUT
+	bFlasher 	: BOOL;
+END_VAR
+VAR
+	ErrorCase	: INT;
+	ErrorID		: INT;
+	fb_TOF		: TOF;
+	fb_TON		: TON;
+	tTimeOff	: TIME;
+	tTimeOn		: TIME;
+	bPulse		: BOOL;
+	nFlashCode	: INT;
+	fb_TOF_Wait	: TOF;
+
+	nCounter: INT;
+	fbPulse: FB_Pulse;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//build a case statment so that user can enter a total number of error conditions for the sequence
+
+ErrorCase := nNumofErrorConditions;
+
+ErrorID	:= nErrorID;
+
+
+CASE ErrorID OF
+	
+	0:	//no error, output is ON
+		fbPulse(bEnable:= FALSE, tTimeOn:= T#1S, tTimeOff:= T#1S, bPulse=> );
+		bFlasher := TRUE;	
+	
+	1:	//Error 1, Output Flashes at a steady rate
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#1S, tTimeOff:= T#1S, bPulse=> bFlasher );
+		
+	2:	//Error 2, Output Flashes 2 time fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#2S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	3:	//Error 3, Output Flashes 3 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#3S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	4:	//Error 4, Output Flashes 4 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#4S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	5:	//Error 5, Output Flashes 5 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#5S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	6:	//Error 6, Output Flashes 6 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#6S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	7:	//Error 7, Output Flashes 7 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#7S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	8:	//Error 8, Output Flashes 8 times fast, off for 2 sec
+		fbPulse(bEnable:= TRUE, tTimeOn:= T#8S, tTimeOff:= T#2S, bPulse=> bFlasher );
+	
+	ELSE
+		fbPulse(bEnable:= FALSE, tTimeOn:= T#1S, tTimeOff:= T#1S, bPulse=> );
+		bFlasher := FALSE;	
+
+END_CASE
+
+(* Original Code, Using FB_Pulse instead
+IF nCounter <> ErrorID THEN
+	fb_TON(IN:= bEnable AND NOT fb_TOF.Q, PT:= T#250MS, Q=> , ET=> );
+	fb_TOF(IN:= fb_TON.q, PT:= T#500MS, Q=> bFlasher, ET=> );
+	
+	nFlashCode := nFlashCode + BOOL_TO_INT(bFlasher);
+	fb_TOF_Wait(IN:= TRUE, PT:= T#2S, Q=> , ET=> );
+END_IF
+*)
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_IntelligentFlasher">
+      <LineId Id="3" Count="52" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

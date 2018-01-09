@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="VariableValidation" Id="{d34edbd6-3ed4-4dcf-8b36-e0b43f10ad75}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK VariableValidation  //this code is only used to prevent TwinCAT's IDE from identifying variables as unused
+
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[GVL_HMI.JoyStick1ScreenStateCommanded := GVL_HMI.JoyStick1ScreenStateCommanded;
+GVL_HMI.JoyStick2ScreenStateCOmmanded := GVL_HMI.JoyStick2ScreenStateCOmmanded;
+GVL_HMI.JoyStick1DeadManState := GVL_HMI.JoyStick1DeadManState;
+GVL_HMI.JoyStick2DeadManState :=GVL_HMI.JoyStick2DeadManState;
+GVL_HMI.Joystick1ZAxisPressed := GVL_HMI.Joystick1ZAxisPressed;
+GVL_HMI.JoyStick2ZAxisPressed := GVL_HMI.JoyStick2ZAxisPressed;
+GVL_HMI.JoyStick1SyncPressed := GVL_HMI.JoyStick1SyncPressed ;
+GVL_HMI.JoyStick2SyncPressed:= GVL_HMI.JoyStick2SyncPressed;
+GVL_HMI.JoyStick1Estop := GVL_HMI.JoyStick1Estop;
+GVL_HMI.Joystick2Estop := GVL_HMI.Joystick2Estop;
+GVL_HMI.JoyStick1Age := GVL_HMI.JoyStick1Age;
+GVL_HMI.JoyStick2Age := GVL_HMI.JoyStick2Age ;
+
+
+//Bantry2BeaconNumber : INT;
+
+
+
+GVL_HMI.GlobalFault_Code := GVL_HMI.GlobalFault_Code;]]></ST>
+    </Implementation>
+    <LineIds Name="VariableValidation">
+      <LineId Id="11" Count="17" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

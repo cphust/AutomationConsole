@@ -1,0 +1,291 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_SerialCom_Kiosk" Id="{055f7e26-49f2-4912-b2fe-d5aa7a845f17}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SerialCom_Kiosk
+
+VAR
+	begpack : bool;
+	x : INT;
+	prefix : STRING := '$R$N';
+	suffix : STRING := '$R$N';
+	fcount : DINT :=0;
+	FRAME : ARRAY [1..200 ] OF BYTE ; 
+	swCheck0 : STRING;
+	swCheck1 : STRING;
+	swCheck2 : STRING;
+	swCheck3 : STRING;
+	swCheck4 : STRING;
+	swCheck5 : STRING;
+	ReceiveByte : ReceiveByte;
+	LastReceivedByte : BYTE;
+	TxBuffer	: ComBuffer;
+	RxBuffer	: ComBuffer;
+
+		(* background communication with the EL6001 terminal *)
+
+		fbEL6002Ctrl		: SerialLineControl;
+	bEL6002CtrlError	: BOOL;
+	eEL6002CtrlErrorID	: ComError_t;
+	(* 	I/O variables for a EL6001 terminal*)
+	stIn_EL6002 AT %I*	: EL6inData22B;	(* linked to the EL6001 in the TwinCAT System Manager *)
+	stOut_EL6002 AT %Q*	: EL6outData22B;(* linked to the EL6001 in the TwinCAT System Manager *)
+	stIn_EL6002B AT %I*	: EL6inData22B;	(* linked to the EL6001 in the TwinCAT System Manager *)
+	stOut_EL6002B AT %Q*	: EL6outData22B;(* linked to the EL6001 in the TwinCAT System Manager *)
+	Timer		: TON;
+	fbSend		: SendString;
+	bSendBusy	: BOOL;
+	eSendErrorID: ComError_t;
+
+	fbReceive		: ReceiveData;
+fbReceivestr		: ReceiveSTRING;
+
+
+	eReceiveErrorID	: ComError_t;
+	nReceiveCounter	: UDINT;
+
+	fbF_Trig: F_TRIG;
+	nStringLength: INT;
+	sStringWithoutPrefix: STRING(255);
+
+END_VAR
+
+VAR_INPUT
+	bEnable : BOOL;
+	sSendString: STRING;
+END_VAR
+
+VAR_OUTPUT
+	bStringReceived	: BOOL;
+	sReceivedString	: STRING;
+	sLastReceivedString: STRING := 'NULL';
+	bDone : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+The SerialLineControl function block is supposed to be called in every PLC cycle.
+It communicates with the serial line hardware device and transmits or receives data.
+The SerialLineControl can be called in the standard task (e.g.for PcCOM port usage) 
+or in a separate fast task (e.g.for terminal usage) as well.
+A fast separate task will be necessary at high baud rates or with KL6001 terminals 
+which have a small process image (3 or 5 data bytes only)
+*)
+
+(* background communication with the EL6001 terminal *)
+
+fbEL6002Ctrl(
+	Mode:= SERIALLINEMODE_EL6_22B, 
+	pComIn:= ADR(stIn_EL6002), 
+	pComOut:= ADR(stOut_EL6002), 
+	SizeComIn:= SIZEOF(stIn_EL6002), 
+	Error=> , 
+	ErrorID=> , 
+	TxBuffer:= TxBuffer, 
+	RxBuffer:= RxBuffer, );
+IF fbEL6002Ctrl.Error THEN
+	bEL6002CtrlError := TRUE;
+	eEL6002CtrlErrorID := fbEL6002Ctrl.ErrorID;
+END_IF
+
+
+// Call the send block every second to repeat the transmission.
+// Also call the block as long as it is busy to finish a transmission.
+Timer(IN:=bEnable, PT := T#125MS);
+IF Timer.Q OR bSendBusy THEN
+	Timer(IN:=FALSE); (* reset timer *)
+	fbSend(	SendString:= sSendString,
+			TXbuffer:= TxBuffer,
+			Busy=> bSendBusy,
+			Error=> );
+	IF fbSend.Error <> COMERROR_NOERROR THEN
+		eSendErrorID := fbSend.Error;
+	END_IF
+END_IF
+
+fbF_Trig(CLK:=bSendBusy);
+bDone := bSendBusy;
+	
+//	Receive string data:
+//	The block receives any data strings beginning with a STX ($02) and ending with an ETX ($03) character.	
+//fbEL6002Ctrl.RxBuffer.Count
+
+WHILE RxBuffer.Count > 205 AND ReceiveByte.ReceivedByte <> 150  DO			
+	ReceiveByte( RxBuffer := RXBuffer);
+END_WHILE
+
+IF RxBuffer.Count > 199 THEN
+fbReceive(//pPrefix := ADR(prefix),
+		  //psuffix := ADR(SUFFIX),
+		 //LenPrefix := 2,
+		 pReceiveData :=ADR(FRAME),
+		 SizeReceiveData := SIZEOF(FRAME),
+		 DataReceived =>,
+		 RxBuffer := RXBUFFER);
+		 END_IF
+		 
+	IF (Frame[1] = 78 OR frame[2] = 78 OR frame[3] = 78) AND NOT GVL_HMI.KioskScreenPower  THEN
+		GVL_HMI.KioskScreenPower := TRUE;
+	ELSIF (Frame[1] = 70 OR frame[2] = 70 OR frame[3] = 70) AND  GVL_HMI.KioskScreenPower  THEN
+			GVL_HMI.KioskScreenPower := FALSE;
+
+	END_IF
+
+
+
+(*
+fbReceivestr(
+	Prefix:= '$N',//'$02',
+	Suffix:= '$R',//'$03',
+	Timeout:= T#1s,
+	ReceivedString:= sReceivedString,
+	RXbuffer:= RxBuffer,
+	StringReceived=> bStringReceived,
+	Busy=> bReceiveBusy,
+	Error=> ,
+	RxTimeout=> bReceiveTimeout );
+
+
+
+
+
+	//ReceiveByte(RxBuffer := RXBuffer);
+	
+		begPack := FALSE;
+	 //CLEAR OUT BUFFER TO PREVENT OVERRUN
+		ReceiveByte( RxBuffer := RXBuffer);
+		IF ReceiveByte.ReceivedByte = 13 THEN
+			swCheck2 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+			WHILE RxBuffer.Count > 5 AND begpack = FALSE DO //CLEAR OUT BUFFER TO PREVENT OVERRUN
+				
+					begPack := TRUE;
+					fcount := fcount + 1;
+					
+					ELSE
+					
+							swCheck1 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+					fcount := fcount - 1;
+				END_IF
+			END_WHILE
+			ELSE
+				swCheck3 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+
+		END_IF
+	END_WHILE
+	
+
+	
+	IF begPack AND RxBuffer.Count > 4 THEN
+		
+				ReceiveByte( RxBuffer := RXBuffer);
+				//swCheck2 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+				IF ReceiveByte.ByteReceived  AND ReceiveByte.ReceivedByte > 50 THEN yRead := BYTE_TO_INT(ReceiveByte.ReceivedByte) ; END_IF
+				ReceiveByte(RxBuffer := RXBuffer);
+				//swCheck3 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+				IF ReceiveByte.ByteReceived  AND ReceiveByte.ReceivedByte >50 THEN xRead := BYTE_TO_INT(ReceiveByte.ReceivedByte) ; END_IF
+				ReceiveByte( RxBuffer := RXBuffer);
+				//swCheck4 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+				IF ReceiveByte.ByteReceived AND ReceiveByte.ReceivedByte <>0 THEN ButtonStateRead := BYTE_TO_INT(ReceiveByte.ReceivedByte); END_IF
+				ReceiveByte( RxBuffer := RXBuffer);
+				//swCheck5 := BYTE_TO_STRING(ReceiveByte.ReceivedByte);
+				IF ReceiveByte.ByteReceived  AND ReceiveByte.ReceivedByte <>0 THEN ScreenStateRead :=BYTE_TO_INT(ReceiveByte.ReceivedByte); END_IF
+	END_IF
+	
+
+*)
+
+
+	
+
+
+IF fbReceivestr.Error <> COMERROR_NOERROR THEN
+	eReceiveErrorID := fbReceivestr.Error;
+END_IF
+
+IF bStringReceived THEN
+	nReceiveCounter := nReceiveCounter + 1;
+	sStringWithoutPrefix := sReceivedString;
+	nStringLength := LEN(sStringWithoutPrefix);
+	sLastReceivedString := sStringWithoutPrefix;	
+END_IF
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_SerialCom_Kiosk">
+      <LineId Id="97" Count="9" />
+      <LineId Id="185" Count="12" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="199" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="3" Count="18" />
+      <LineId Id="251" Count="0" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="262" Count="0" />
+      <LineId Id="423" Count="1" />
+      <LineId Id="428" Count="0" />
+      <LineId Id="427" Count="0" />
+      <LineId Id="396" Count="0" />
+      <LineId Id="510" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="410" Count="2" />
+      <LineId Id="415" Count="0" />
+      <LineId Id="414" Count="0" />
+      <LineId Id="409" Count="0" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="602" Count="0" />
+      <LineId Id="604" Count="2" />
+      <LineId Id="603" Count="0" />
+      <LineId Id="398" Count="3" />
+      <LineId Id="511" Count="8" />
+      <LineId Id="402" Count="4" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="338" Count="0" />
+      <LineId Id="421" Count="0" />
+      <LineId Id="218" Count="0" />
+      <LineId Id="241" Count="0" />
+      <LineId Id="360" Count="0" />
+      <LineId Id="422" Count="0" />
+      <LineId Id="363" Count="1" />
+      <LineId Id="368" Count="0" />
+      <LineId Id="374" Count="0" />
+      <LineId Id="417" Count="0" />
+      <LineId Id="370" Count="1" />
+      <LineId Id="375" Count="0" />
+      <LineId Id="372" Count="0" />
+      <LineId Id="369" Count="0" />
+      <LineId Id="361" Count="0" />
+      <LineId Id="418" Count="2" />
+      <LineId Id="362" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="349" Count="0" />
+      <LineId Id="260" Count="0" />
+      <LineId Id="345" Count="0" />
+      <LineId Id="258" Count="0" />
+      <LineId Id="222" Count="1" />
+      <LineId Id="344" Count="0" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="229" Count="0" />
+      <LineId Id="346" Count="0" />
+      <LineId Id="250" Count="0" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="347" Count="0" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="348" Count="0" />
+      <LineId Id="238" Count="0" />
+      <LineId Id="224" Count="0" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="520" Count="0" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="210" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="252" Count="1" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="32" Count="9" />
+      <LineId Id="266" Count="0" />
+      <LineId Id="261" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

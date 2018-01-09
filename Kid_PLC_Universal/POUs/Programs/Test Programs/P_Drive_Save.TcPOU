@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_Drive_Save" Id="{87b65ff2-c302-465d-ba62-1c736d6db581}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_Drive_Save
+VAR
+	fb_CoERead: FB_EcCoESdoRead;
+	fb_CoEWrite: FB_EcCoESdoWrite;
+	dwData: DWORD;
+	nData:	INT;
+	
+	bStart_Read: 	BOOL;
+	
+	bStart_Write:	BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// To Do: this is a CoE write & read to Menu 0 of the drive to save the parameter changes into memory
+
+// This program provides FBs for Reading and writing over CoE to the Drive parameters
+(*
+
+fb_CoERead(
+	sNetId:= 		F_CreateAmsNetId(nIds:=GVL_IO.stAmsAddr_Kid_1.netId), 
+//	sNetId:= GVL_IO.stAmsAddr_Kid_1.netId, 
+	nSlaveAddr:= 	GVL_IO.stAmsAddr_Kid_1.port, 
+	nSubIndex:= 16#01, 
+	nIndex:= 	16#1010, 
+	pDstBuf:= 	ADR(nData), 
+	cbBufLen:= 	2, 
+	bExecute:= 	bStart_Read, 
+	tTimeout:= 	T#5S, 
+	bBusy=> , 
+	bError=>	bFB_CoE_Read_Save_Error	, 
+	nErrId=> );
+	
+
+	
+fb_CoEWrite(
+	sNetId:= F_CreateAmsNetId(nIds := GVL_IO.stAmsAddr_Kid_1.netId), 
+	nSlaveAddr:=	GVL_IO.stAmsAddr_Kid_1.port, 
+	nSubIndex:= 16#01, 
+	nIndex:= 	16#1010, 
+	pSrcBuf:=	ADR(nData), 
+	cbBufLen:= 	2, 
+	bExecute:= 	bStart_Write, 
+	tTimeout:= 	T#5S, 
+	bBusy=> , 
+	bError=> 	bFB_CoE_Write_Save_Error, 
+	nErrId=> );
+	
+*)]]></ST>
+    </Implementation>
+    <LineIds Name="P_Drive_Save">
+      <LineId Id="3" Count="33" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="F_Update_HumanReadable" Id="{5feef6ff-f0b6-4cdf-9dc0-0c48792e800a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_Update_HumanReadable : BOOL
+VAR_INPUT
+END_VAR
+VAR
+	CheckVar : DINT;
+	GVL_KidAxis: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF GVL_Motion.lrEncoder_ScalingNum = 0 THEN RETURN; END_IF
+IF GVL_INDEX.Direction_Flipped THEN
+	GVL_DriveParameters.Normalized_Position := (GVL_Index.Home_Offset -KidAxis.actualPos)/ LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum);
+ELSE
+	GVL_DriveParameters.Normalized_Position := (KidAxis.actualPos - GVL_Index.Home_Offset)/ LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum);
+END_IF
+
+
+GVL_DriveParameters.Normalized_Acceleration := (KidAxis.modeAcc * LREAL_TO_INT(GVL_Motion.lrDistance_1_Motor_Rev))/120;
+//GVL_DriveParameters.Normalized_Min_Limit := GVL_Index.Admin_Min / LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum);
+//GVL_DriveParameters.Normalized_Max_Limit := GVL_Index.Admin_Max / LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum);
+
+KidAxis.HomedPosition_toMom := GVL_DriveParameters.Normalized_Position;
+
+CheckVar := GVL_DriveParameters.targetpos_FromMom;
+
+CheckVar := F_LimitTarget((GVL_DriveParameters.targetpos_FromMom * 3020) + GVL_Index.Home_Offset);
+
+
+///GVL_DriveParameters.modeVel_FromMom := 1 + (LREAL_TO_INT(KidAxis.modeVel_FromMom_Raw * 1000) / LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum));
+///GVL_DriveParameters.modeAccel_FromMom := 1 + (LREAL_TO_INT(KidAxis.modeAccel_FromMom_Raw * 1000) /LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum));
+///GVL_DriveParameters.modeDecel_FromMom := 1 + (LREAL_TO_INT(KidAxis.modeDecel_FromMom_Raw * 1000) /LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum));
+GVL_DriveParameters.modeVel_FromMom := KidAxis.modeVel_FromMom_Raw;
+GVL_DriveParameters.modeAccel_FromMom := 1 + KidAxis.modeAccel_FromMom_Raw;
+GVL_DriveParameters.modeDecel_FromMom := 1 + KidAxis.modeDecel_FromMom_Raw;
+GVL_DriveParameters.targetpos_FromMom := KidAxis.targetpos_FromMom_Raw;
+KidAxis.velDem_UU := LREAL_TO_DINT(KidAxis.pVelDem * GVL_Motion.lrDistance_1_Motor_Rev);
+
+	GVL_HMI.GlobalEstopCode := BOOL_TO_UDINT(kidAxis.CheckIn.SafteyTripped) * ULINT_TO_UDINT(+ (BOOL_TO_ULINT(kidAxis.CheckIn.safteyTripped) * (BOOL_TO_ULINT(kidAxis.CheckIn.momControl) * 1 +
+					BOOL_TO_ULINT(kidAxis.CheckIn.Rmt_DeadManPressed) * 2 +
+					BOOL_TO_ULINT(NOT kidAxis.Status.voltageEnabled) * 4 + 
+					BOOL_TO_ULINT(kidAxis.Status.switchOnDisabled) * 8 + 
+					BOOL_TO_ULINT(NOT bPlcEstopSignal) * 16 + 
+					BOOL_TO_ULINT(NOT GVL_Safe_IO.bLimit_Ultimate) * 32 + 
+					BOOL_TO_ULINT(NOT GVL_Safe_IO.bMotor_Not_Moving) * 64 + 
+					BOOL_TO_ULINT(GVL_Safe_IO.bContactor) * 128 + 
+					BOOL_TO_ULINT(NOT GVL_Safe_IO.bRelease_Load_Brake) * 256 + 
+					BOOL_TO_ULINT(NOT GVL_Safe_IO.bRelease_Motor_Brake) * 512 + 
+					BOOL_TO_ULINT(GVL_Safe_IO.bSafetySystem_Reset) * 1024 )));
+					
+					//IF GVL_IO.kidAxis.HomeOffset_UU_W <>0 AND GVL_IO.kidAxis.HomeOffset_UU_W <> GVL_Index.Home_Offset / LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum) THEN
+					//	GVL_Index.Home_Offset_UU := GVL_IO.kidAxis.HomeOffset_UU_W;
+						//GVL_Index.Home_Switch_Offset := GVL_Index.Home_Switch_Offset + (GVL_Index.Home_Offset_UU * LREAL_TO_INT((1/GVL_Motion.lrEncoder_ScalingNum)) -GVL_Index.Home_Offset); 
+					//	IF GVL_Index.Home_Offset_UU <> 0 THEN GVL_Index.Home_Offset := GVL_IO.kidAxis.HomeOffset_UU_W * LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum); END_IF
+					//END_IF
+	GVL_IO.kidAxis.KidEstopCode := GVL_HMI.GlobalEstopCode;
+	GVL_IO.KidAxis.MotionControllerErrorCode := GVL_IO.kidAxis.ErrorCode;
+	//GVL_IO.kidAxis.HomeOffset_UU_R := GVL_Index.Home_Offset_UU;
+	GVL_IO.kidAxis.Speed := kidaxis.pVelDem;
+	GVL_IO.kidAxis.Load := DINT_TO_INT(GVL_DriveParameters.dnCurrentMagnitude);
+	GVL_IO.kidAxis.IsUltimateLimitReached := NOT GVL_Safe_IO.bLimit_Ultimate;
+	GVL_IO.kidAxis.IsHardUpLimitReached := NOT GVL_Safe_IO.bLimit_Hard_Up;
+	GVL_IO.kidAxis.IsHardDownLimitReached := NOT GVL_Safe_IO.bLimit_Hard_Down;
+
+	
+	
+	
+	
+	IF GVL_HMI.Set_User_Home THEN
+		GVL_Index.Home_Offset := KidAxis.actualPos;
+		GVL_HMI.Set_User_Home := FALSE;
+	END_IF
+//	IF GVL_io.kidAxis.CheckIn.SetSoftDown THEN
+//		IF GVL_INDEX.direction_Flipped THEN GVL_Index.Admin_Max := GVL_IO.kidAxis.actualPos; ELSE GVL_Index.Admin_Min := GVL_IO.kidAxis.actualPos; END_IF
+//	END_IF
+	
+//	IF GVL_io.kidAxis.CheckIn.SetSoftUp THEN
+//		IF GVL_INDEX.direction_Flipped THEN GVL_Index.Admin_Min := GVL_IO.kidAxis.actualPos; ELSE GVL_Index.Admin_Max := GVL_IO.kidAxis.actualPos; END_IF
+//	END_IF
+	]]></ST>
+    </Implementation>
+    <LineIds Name="F_Update_HumanReadable">
+      <LineId Id="141" Count="20" />
+      <LineId Id="215" Count="0" />
+      <LineId Id="224" Count="1" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="162" Count="29" />
+      <LineId Id="193" Count="1" />
+      <LineId Id="196" Count="11" />
+      <LineId Id="101" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

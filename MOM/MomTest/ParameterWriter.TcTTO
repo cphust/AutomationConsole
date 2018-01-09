@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <Task Name="ParameterWriter" Id="{c3a7563d-9c61-431b-85f5-533eb48d9b20}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>3000</CycleTime>
+    <Priority>6</Priority>
+    <PouCall>
+      <Name>WriteEtherCAT</Name>
+    </PouCall>
+    <TaskFBGuid>{615718d2-4a9c-40be-9c72-c1df3de23de9}</TaskFBGuid>
+    <Fb_init>{f612530f-0b06-481f-abe6-676dffdb0d48}</Fb_init>
+    <Fb_exit>{3ad71ac8-525a-4aa3-b725-5d237563504c}</Fb_exit>
+    <CycleUpdate>{74aaee87-3473-4fc9-bf20-365983c43186}</CycleUpdate>
+    <PostCycleUpdate>{d42a409b-8e8f-429b-abc2-f58ca3e24bc2}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

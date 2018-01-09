@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="F_LoadDriveParameters" Id="{fcc037c2-3310-49ca-8f35-16cfc12223b6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_LoadDriveParameters : BOOL //Places the correct values into MOMs placeholder variables for transmission to each kid;
+VAR_INPUT
+	KidID : INT; //Axis identifier for each kid for which we will load parameters
+	AxisID : INT;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	(*
+
+CASE AxisID OF
+	1:
+	MAIN.Kid[KidID].EtherCATWriter.lrEncoder_ScalingNum := 3020;
+	MAIN.Kid[KidID].EtherCATWriter.Admin_Min :=1000;
+	MAIN.Kid[KidID].EtherCATWriter.Admin_Max :=100000;
+	MAIN.Kid[KidID].EtherCATWriter.Direction_Flipped := 0;
+	MAIN.Kid[KidID].EtherCATWriter.lrDistance_1_Motor_Rev :=300;
+	MAIN.Kid[KidID].EtherCATWriter.QuickStop_Accel := 6000;
+	MAIN.Kid[KidID].EtherCATWriter.lrDecel_For_EStop := 9000;
+	
+	2:
+	MAIN.Kid[KidID].EtherCATWriter.lrEncoder_ScalingNum := 2000;
+	MAIN.Kid[KidID].EtherCATWriter.Admin_Min :=1000;
+	MAIN.Kid[KidID].EtherCATWriter.Admin_Max :=100000;
+	MAIN.Kid[KidID].EtherCATWriter.Direction_Flipped := 0;
+	MAIN.Kid[KidID].EtherCATWriter.lrDistance_1_Motor_Rev :=300;
+	MAIN.Kid[KidID].EtherCATWriter.QuickStop_Accel := 6000;
+	MAIN.Kid[KidID].EtherCATWriter.lrDecel_For_EStop := 9000;
+	
+END_CASE*)
+	]]></ST>
+    </Implementation>
+    <LineIds Name="F_LoadDriveParameters">
+      <LineId Id="46" Count="1" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="49" Count="18" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

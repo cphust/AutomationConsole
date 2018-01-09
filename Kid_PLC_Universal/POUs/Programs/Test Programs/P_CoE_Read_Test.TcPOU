@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_CoE_Read_Test" Id="{82e1cc18-c8e6-4ef9-8d4c-502fb3e065e1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_CoE_Read_Test
+VAR
+	fb_CoERead: FB_EcCoESdoRead;
+	fb_CoEWrite: FB_EcCoESdoWrite;
+	dwData: DWORD;
+	nData:	INT;
+	
+	bStart: BOOL;
+	
+	bStart_Write: BOOL;
+	fbstCoEData_Comparison: FB_stCoEData_Comparison;
+	bstartcomp: BOOL;
+	fbADSWRITE: ADSWRITE;
+	dwNC_EncoderSubMask: DWORD;
+	bStart1: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+// This program provides FBs for Reading and writing over CoE to the Drive parameters
+fbstCoEData_Comparison(
+			nNumOfPara:= GVL_DriveParameters.nNumOfParameters,
+			bExecute:= bstartcomp );
+
+fb_CoERead(
+	sNetId:= 		F_CreateAmsNetId(nIds:=GVL_IO.stAmsAddr_Kid_1.netId), 
+	nSlaveAddr:= 	GVL_IO.stAmsAddr_Kid_1.port, 
+	nSubIndex:= 	16#08, 
+	nIndex:= 		16#2005, 
+	pDstBuf:= 		ADR(dwData), 
+	cbBufLen:= 		SIZEOF(dwData), 
+	bExecute:= 		bStart, 
+	tTimeout:= 		T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+	
+
+	
+fb_CoEWrite(
+	sNetId:= F_CreateAmsNetId(nIds := GVL_IO.stAmsAddr_Kid_1.netId), 
+	nSlaveAddr:=	GVL_IO.stAmsAddr_Kid_1.port, 
+	nSubIndex:= 16#35, 
+	nIndex:= 	16#2013, 
+	pSrcBuf:=	ADR(dwData), 
+	cbBufLen:= 	4, 
+	bExecute:= bStart_Write, 
+	tTimeout:= T#5S, 
+	bBusy=> , 
+	bError=> , 
+	nErrId=> );
+	
+
+	fbADSWRITE(
+		NETID	:= , 
+		PORT	:= 501, 
+		IDXGRP	:= 4001 , 
+		IDXOFFS	:= 16#0001_0015, 
+		LEN		:= 4, 
+		SRCADDR	:= ADR(dwNC_EncoderSubMask), 
+		WRITE	:= bStart1, 
+		TMOUT	:= , 
+		BUSY	=> , 
+		ERR		=> , 
+		ERRID	=> );]]></ST>
+    </Implementation>
+    <LineIds Name="P_CoE_Read_Test">
+      <LineId Id="3" Count="46" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

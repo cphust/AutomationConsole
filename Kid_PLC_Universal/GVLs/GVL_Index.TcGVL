@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <GVL Name="GVL_Index" Id="{20913ea7-6a41-4056-b004-d30aa93ef499}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+//Selected target with all settings
+
+	SelectedMoveType	: SINT;	
+	
+	bMoveComplete		: BOOL;		//Move Complete		//19.050
+	rVelocity			: REAL;
+	//rAccelerationTime	: REAL;
+	//rDecelerationTime	: REAL;
+	rTarget				: REAL;
+	rTotalTime			: REAL;
+	Home_Offset_UU : DINT;
+// Save Last move commands
+
+	nResumeMoveType		: INT;		//nMotion_Command of last executed move
+	//rVelocity_Resume	: REAL;
+	//rAcceleration_Resume: REAL;
+	//rDeceleration_Resume: REAL;
+	//rTarget_Resume 		: REAL;
+	//rTimeRemaining_Resume	: REAL;
+	//rAccelerationTime_Resume: REAL;
+	//rDecelerationTime_Resume: REAL;
+	//rRemaining_Distance	: REAL;
+	
+	
+// Current Machinery Limits, last verified set from Axis Controller
+	//dnInternal_MaxLimit	: DINT;
+	//dnInternal_MinLimit	: DINT;
+	
+	//bResumeLastMoveEnable: BOOL;
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+	
+	Initialized			: BOOL := FALSE;
+	Admin_Max			: DINT;		//This is Maximum Admin Limit	//18.053
+	Admin_Min			: DINT; 	//This is Minimum Admin Limit	//18.054
+	User_Max_UU		: DINT;
+	User_Min_UU		: DINT;
+	//Target_Up			: DINT;		//This is a Saved UP Target		//19.051	
+	//Target_Down 		: DINT;		//This is a Saved DOWN Target	//19.052
+	Encoder_Offset		: DINT;		//This is saved encoder pulses for Zero Position
+	Home_Offset			: DINT; 	//This is the offset for 0 value 
+	Home_Switch_Offset 	: DINT;		//Offset for Axis home switch vs 0 value
+	//Home_Direction		: BOOL; 	//True Means zero, False means Max
+	Direction_Flipped	: BOOL ;     //This is the direction indicator, false for positive and true for reversed;
+	//Admin_Max_Speed		: DINT;
+	//Admin_Max_Accel		: DINT;
+	Decel_For_Estop 	: DINT;
+	Decel_For_DeadMan	: DINT;
+END_VAR	]]></Declaration>
+  </GVL>
+</TcPlcObject>

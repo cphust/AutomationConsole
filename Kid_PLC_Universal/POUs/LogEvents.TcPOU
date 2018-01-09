@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="LogEvents" Id="{8df4ae56-fe0c-4e26-b9b8-cacd337f6f3e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM LogEvents
+VAR
+	FileOpen : FB_FileOpen;
+	FileLog : FB_FileWrite;
+	FileClose : FB_FileCLose;
+	LogFileHandle : UINT;
+	GetMomTime : FB_LocalSystemTime;
+	nCase: INT;
+	//bEnable : BOOL := TRUE;
+	bValid : BOOL;
+	CurrentTime : TIMESTRUCT;
+	DateString : STRING;
+	DateLint : LINT;
+	//hFile: INT;
+	LogString : STRING(5000);
+	ErrorId : UINT;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//GetMomTime will syncronize system clocks between kids and mom every 5 seconds
+
+GetMomTime(sNetID:='10.4.1.5.1.1',  bEnable := TRUE, bValid => bValid,  systemTime=> CurrentTime);			
+		dateLint := (100 *currentTime.wDay ) + (10000 * currenttime.wmonth) + (1000000 * currenttime.wYear );  		  
+		datestring := Concat('_', LINT_TO_STRING(DateLint/100));
+	
+		
+
+CASE nCase OF
+0:
+
+10:
+FileOpen(sNetID :=   GVL_PLC.sNetID,//concat(Concat(Concat(Concat(concat(Concat(Concat(Concat(Concat(Concat(concat(CONCAT(BYTE_TO_STRING(stAmsAddr_Kid_1.netId[0]), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[1])),'.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[2])), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[3])),  '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[4])), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[5])),':'), WORD_TO_STRING(stAMSAddr_Kid_1.port)),
+					  sPathName :=  CONCAT(CONCAT(CONCAT('\Hard DIsk2\ParameterFiles\', GVL_PLC.HostName), DateString),  '.txt'),
+					  nMode := FOPEN_MODEAPPEND OR FOPEN_MODEPLUS OR  FOPEN_MODETEXT,
+					  ePath := PATH_GENERIC, 
+					  bExecute := TRUE,
+					  tTimeOut := T#3S,
+					  hFile => LogFileHandle,
+					  bError => ,
+					  nErrId =>  );	
+
+IF LogFileHandle <> 0 THEN 	nCase := Ncase + 10;  END_IF
+
+20:
+FileLog(hFile := LogFileHandle,
+		pWriteBuff := ADR(LogString),
+		cbWriteLen := LEN(LogString),
+		tTimeout := T#5S,
+		bExecute := TRUE);
+		
+IF  filelog.cbWrite = len(LogString) THEN
+	nCase := Ncase + 10; 
+ELSIF filelog.berror THEN
+		ErrorID := 10;
+		nCase := 9999;	
+END_IF
+30:
+ FileClose(sNetID := GVL_PLC.sNetId,
+			 hFile := LogFileHandle,
+			 bExecute := TRUE);
+	IF NOT fileclose.bBusy THEN
+		nCase := Ncase + 10; 
+	END_IF		
+40:
+fileOpen.bExecute := FALSE;
+fileclose.bExecute := FALSE;
+filelog.bExecute := FALSE;
+//filelog.pwritebuff := ADR('0')
+
+END_CASE
+]]></ST>
+    </Implementation>
+    <LineIds Name="LogEvents">
+      <LineId Id="60" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="26" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="85" Count="7" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="43" Count="1" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="98" Count="2" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="110" Count="2" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

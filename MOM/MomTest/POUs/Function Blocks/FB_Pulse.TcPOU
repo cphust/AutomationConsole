@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_Pulse" Id="{b2e8c1b1-02a8-4d75-b9ad-31266dda4a13}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Pulse
+VAR_INPUT
+	bEnable		: BOOL;		//When TRUE, bPulse will be on for tTimeOn and off for tTimeOff
+	tTimeOn		: TIME;		//Time bPulse is On
+	tTimeOff	: TIME;		//Time bPulse is Off
+END_VAR
+VAR_OUTPUT
+	bPulse		: BOOL;
+END_VAR
+VAR
+	fbTON		: TON;
+	fbTOF		: TOF;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.06		0.00.01		Initial Code
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+fbTON(IN:= bEnable AND NOT fbTOF.Q, PT:= tTimeOn, Q=> , ET=> );
+fbTOF(IN:= fbTON.Q, PT:= tTimeOff, Q=> , ET=> );
+
+IF bEnable THEN
+	bPulse := fbTON.M;
+ELSE
+	bPulse := FALSE;
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_Pulse">
+      <LineId Id="3" Count="14" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="44" Count="2" />
+      <LineId Id="48" Count="1" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

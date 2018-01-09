@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="FB_CheckIn_EtherCAT" Id="{f622708c-399a-41c5-a43f-619c1b53803d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CheckIn_EtherCAT
+
+VAR_INPUT
+	GlobalGo : BOOL;
+	momControl: BOOL;
+momControl_FromKid: BOOL;
+	KidID : INT := -1;
+	//UpdateWord_toKid AT %Q* : UDINT;
+	//UpdateWord_FromKid AT %I* : UDINT;
+	SafteyTripped : BOOL; //DEADMAN STATE OF MOM
+	Hard_Limit_Tripped : BOOL;
+		HomeOperation_Active : BOOL;
+END_VAR
+
+VAR_OUTPUT
+	Kid_EstopPressed : BOOL;
+	CommError_FromKid : BOOL;
+		CollisionSwitch : BOOL; 
+		HomeActivated : BOOL;
+END_VAR
+
+VAR
+	UltimateByPassCounter : INT;
+	checkid : UINT;
+	checkingInt : UDINT := 0;
+	SysTime : GetSystemTime();
+	Unknown: BOOL;
+	LeaveEnabled: BOOL;
+	heartBeat : BOOL;
+	KidComTimer : TON;
+	KidCom_ET : TIME;
+		SoftLimitCounter : INT;
+	
+	RMT_EstopActivate : BOOL;
+	Ultimate_Tripped : BOOL;	
+
+	//SafteyTripped: INT;
+END_VAR
+
+
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+IF MAIN.Kid[KidID].modeAccel_FromMom_Raw = 0 THEN MAIN.Kid[KidID].modeAccel_FromMom_Raw := 10; END_IF
+checkingInt := MAIN.Kid[KidID].UpdateWord_ToMom;
+ 		 
+		checkingInt := checkingInt MOD 1024;
+		Kid_EstopPressed := CheckingInt/512 > 0; CheckingInt := CheckingInt MOD 512;
+	Ultimate_Tripped := CheckingInt/256 > 0; CheckingInt := CheckingInt MOD 256;
+	momControl_FromKid:= checkingInt / 128 > 0;	checkingInt := checkingInt MOD 128;
+	CollisionSwitch := checkingInt / 64 > 0;	
+	checkingInt := checkingInt MOD 64;
+	HomeActivated := checkingInt / 32 > 0;			checkingInt := checkingInt MOD 32;
+	CommError_FromKid:= checkingInt / 16 > 0;	checkingInt := checkingInt MOD 16;
+	SafteyTripped := checkingInt / 8 > 0;	checkingInt := checkingInt MOD 8;
+	Hard_Limit_Tripped:= checkingInt / 4 > 0;	checkingInt := checkingInt MOD 4;
+	LeaveEnabled:= FALSE;
+	KidComTimer(IN:=checkingInt MOD 2 >0 = HeartBeat OR MAIN.GlobalReset, PT:=T#150MS , Q=> CommError_FromKid, ET=> KidCom_ET );
+	HeartBeat :=checkingInt MOD 2>0;
+	
+	IF NOT momcontrol_Fromkid THEN RETURN; END_IF
+	
+	IF KidID = -1 THEN RETURN; END_IF
+	IF NOT MomControl THEN RETURN; END_IF
+IF SafteyTripped THEN 
+	MAIN.GlobalEstopActive :=  NOT MAIN.Kid[KidID].SafteyReset; 
+	
+	IF MAIN.GlobalEstopCode = 0 THEN 
+		MAIN.GlobalEstopCode :=  LREAL_TO_INT(EXPT(2, KidID-1)); 
+		IF CommError_FromKid OR MAIN.Kid[KidID].bComTimeOutError  THEN MAIN.GlobalEstopCode := MAIN.GlobalEstopCode + 16; END_IF;
+		IF Ultimate_Tripped THEN Main.GlobalEstopCode := Main.GlobalEstopCode + 32; END_IF;
+		IF MAIN.InterOpTimeout THEN MAIN.GlobalEstopCode := Main.GlobalEstopCode + 64; END_IF
+		//IF SafteyTripped THEN MAIN.GlobalEstopCode := main.GlobalEstopCode + 128; END_IF
+		IF NOT GVL_HMI.Mom_Estop_Signal OR NOT GVL_HMI.Kiosk_Estop_Signal THEN MAIN.GlobalEstopCode := Main.GlobalEstopCode + 256; END_IF
+		IF main.JoyStickEstopActive THEN main.GlobalEstopCode := main.GlobalEstopCode + 512; END_IF
+	END_IF
+	
+END_IF
+
+	IF CommError_FromKid THEN
+		MAIN.GlobalEstopActive := NOT MAIN.Kid[KidID].SafteyReset;
+	END_IF
+	
+
+	IF MAIN.Kid[KidID].resetCOM  THEN
+		CommError_FromKid := FALSE;
+	END_IF
+	
+
+	RMT_Estopactivate := (Main.GlobalEstopActive AND NOT MAIN.Kid[KidID].SafteyReset) OR NOT GVL_HMI.Mom_Estop_Signal OR NOT GVL_HMI.Kiosk_Estop_Signal;
+	unknown := FALSE;
+	//LeaveEnabled := TRUE;
+	MAIN.Kid[KidID].UpdateWord_FromMom:=	(INT_TO_UDINT(KidID) * 134217728) +
+	(BOOL_TO_UDINT(MAIN.Kid[KidID].byPassSoftDown) * 16384) +
+	(BOOL_TO_UDINT(MAIN.Kid[KidID].byPassSoftUp) * 8192) +
+	(BOOL_TO_UDINT(MAIN.Kid[KidID].byPassHardDown) * 4096) +
+	(BOOL_TO_UDINT(MAIN.Kid[KidID].byPassHardup) * 2048) +
+	(BOOL_TO_UDINT(MAIN.Kid[KidID].byPassUltimate) * 1024 ) +
+						(BOOL_TO_UDINT(HomeOperation_Active) * 512) +
+						(BOOL_TO_UDINT(MAIN.GantryCollision) * 256) +
+						(BOOL_TO_UDINT(momControl) * 128) +
+						(BOOL_TO_UDINT(MAIN.Kid[KidID].RMT_DeadManPressed OR main.Kid[kidid].CheckIn.HomeOperation_Active) * 64) +
+						(BOOL_TO_UDINT(MAIN.Kid[KidID].SafteyReset) * 32) +
+						(BOOL_TO_UDINT(MAIN.Kid[KidID].resetCOM) * 16) +
+						(BOOL_TO_UDINT(MAIN.GlobalEstopActive AND NOT MAIN.GlobalReset) * 8) +
+						(BOOL_TO_UDINT(FALSE) * 4) +
+						(BOOL_TO_UDINT(LeaveEnabled) * 2) +
+						BOOL_TO_UDINT(HeartBeat);
+	
+	//IF MAIN.Kid[KidID].SetAdminMin OR MAIN.Kid[KidID].SetAdminMax THEN
+	//	SoftLimitCounter := SoftLimitCounter + 1;
+	//	IF SoftLimitCounter > 1000 THEN MAIN.Kid[KidID].SetAdminMax := FALSE; MAIN.Kid[KidID].SetAdminMin := FALSE; 	MAIN.kid[kidid].IsUltimateLimitBypassed := FALSE; END_IF	
+	//END_IF
+	
+MAIN.Kid[KidID].SafteyReset := MAIN.Kid[KidID].SafteyReset AND SafteyTripped;
+MAIN.Kid[KidID].resetCOM := MAIN.Kid[KidID].resetCOM AND ( MAIN.Kid[KidID].bComTimeOutError OR CommError_FromKid);
+
+		MAIN.Kid[KidID].bComTimeOutError := CommError_FromKid;
+		Main.GlobalEstopActive := momcontrol_fromkid AND (Main.GlobalEstopActive OR  SafteyTripped);
+		
+//IF MAIN.kid[Kidid].IsUltimateLimitBypassed THEN 
+//	UltimateByPassCounter := UltimateByPassCounter + 1;
+//	IF 	UltimateByPassCounter > 100000 THEN MAIN.kid[Kidid].isultimatelimitbypassed := FALSE; UltimateByPassCounter :=0; END_IF
+		
+//	END_IF
+//MAIN.Kid[KidID].SafteyReset := Estop_Activate;
+									
+						
+//	MAIN.Kid[KidID].modeVel_FromMom_Raw := (MAIN.Kid[KidID].modeVel_FromMom ;
+//IF KidId = 3 THEN MAIN.Kid[KidID].modeVel_FromMom_Raw := (MAIN.Kid[KidID].modeVel_FromMom  * main.Kid[KidID].ScalingNumber)/115; END_IF
+//MAIN.Kid[KidID].modeAccel_FromMom_Raw := (MAIN.Kid[KidID].modeAccel_FromMom/2) + (MAIN.Kid[KidID].modeAccel_FromMom  * main.Kid[KidID].ScalingNumber/200)	;
+//IF KidId = 3 THEN MAIN.Kid[KidID].modeAccel_FromMom_Raw := (MAIN.Kid[KidID].modeAccel_FromMom/2) + (MAIN.Kid[KidID].modeAccel_FromMom  * main.Kid[KidID].ScalingNumber/205)	; END_IF
+//;
+//MAIN.Kid[KidID].modeDecel_FromMom_Raw :=  MAIN.Kid[KidID].modeDEcel_FromMom;
+
+(*IF MAIN.Kid[KidID].modeVel_FromMom_Raw > 0 THEN
+	IF Main.Kid[kidID].HomedPosition_toMom < 5 THEN MAIN.Kid[KidID].modeVel_FromMom_Raw := 2; END_IF
+ELSE
+	IF Main.Kid[kidID].HomedPosition_toMom < 100 THEN MAIN.Kid[KidID].modeVel_FromMom_Raw := -5 *(MAIN.Kid[KidID].modeVel_FromMom_Raw/10); END_IF
+END_IF*)]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CheckIn_EtherCAT">
+      <LineId Id="1138" Count="0" />
+      <LineId Id="915" Count="0" />
+      <LineId Id="873" Count="0" />
+      <LineId Id="234" Count="2" />
+      <LineId Id="831" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="237" Count="3" />
+      <LineId Id="242" Count="3" />
+      <LineId Id="560" Count="0" />
+      <LineId Id="246" Count="0" />
+      <LineId Id="1047" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="1048" Count="0" />
+      <LineId Id="829" Count="0" />
+      <LineId Id="916" Count="0" />
+      <LineId Id="233" Count="0" />
+      <LineId Id="402" Count="0" />
+      <LineId Id="466" Count="0" />
+      <LineId Id="403" Count="0" />
+      <LineId Id="645" Count="2" />
+      <LineId Id="460" Count="0" />
+      <LineId Id="649" Count="0" />
+      <LineId Id="691" Count="1" />
+      <LineId Id="461" Count="0" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="404" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="121" Count="1" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="283" Count="0" />
+      <LineId Id="282" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="363" Count="0" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="1005" Count="0" />
+      <LineId Id="1001" Count="3" />
+      <LineId Id="415" Count="0" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="410" Count="0" />
+      <LineId Id="41" Count="6" />
+      <LineId Id="324" Count="0" />
+      <LineId Id="736" Count="1" />
+      <LineId Id="739" Count="0" />
+      <LineId Id="738" Count="0" />
+      <LineId Id="781" Count="0" />
+      <LineId Id="365" Count="0" />
+      <LineId Id="129" Count="0" />
+      <LineId Id="559" Count="0" />
+      <LineId Id="561" Count="0" />
+      <LineId Id="603" Count="0" />
+      <LineId Id="782" Count="0" />
+      <LineId Id="784" Count="3" />
+      <LineId Id="783" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="51" Count="1" />
+      <LineId Id="1139" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="1182" Count="1" />
+      <LineId Id="958" Count="0" />
+      <LineId Id="1092" Count="0" />
+      <LineId Id="1091" Count="0" />
+      <LineId Id="1090" Count="0" />
+      <LineId Id="1093" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

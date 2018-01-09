@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <GVL Name="GVL_HMI" Id="{f08abd25-ce95-4d32-806c-0bcdecb1a95c}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL PERSISTENT
+	
+
+//GantryLockWindow : DINT := 400;
+
+
+
+//Patient{BeaconNumber}.Y
+//Patient{BeaconNumber}.Active
+//unJoystick1SelectNum : UINT;
+//unJoystick2SelectNum : UINT;
+
+//unJoystick1SelectNum : UINT;
+//unJoystick2SelectNum : UINT;
+
+
+//JoyStick1ScreenState : UINT;
+//JoyStick2ScreenState : UINT;
+//JoyStick1ScreenStateCommanded : INT;
+//JoyStick2ScreenStateCOmmanded : INT;
+//JoyStick1DeadManState : BOOL;
+//JoyStick2DeadManState : BOOL;
+//Joystick1ZAxisPressed : BOOL;
+//JoyStick2ZAxisPressed : BOOL;
+//JoyStick1SyncPressed : BOOL;
+//JoyStick2SyncPressed: BOOL;
+//JoyStick1Estop : BOOL;
+//Joystick2Estop : BOOL;
+//JoyStick1Age : TIME;
+//JoyStick2Age : TIME;
+
+
+//Bantry2BeaconNumber : INT;
+
+
+
+GlobalFault_Code : INT;
+
+GUIGlobalReset : BOOL;
+
+	
+END_VAR
+
+VAR_GLOBAL
+KioskScreenPower AT %Q* : BOOL;	
+//Patient1 : Patient;
+//Patient2 : Patient;
+//Patient3 : Patient;
+//Patient4 : Patient;
+	EstopLight AT %Q* : BOOL;
+Mom_Estop_Signal AT %I* : BOOL;
+Kiosk_Estop_Signal AT %I* : BOOL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

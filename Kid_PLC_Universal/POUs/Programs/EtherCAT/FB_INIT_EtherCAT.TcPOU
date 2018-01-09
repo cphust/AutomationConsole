@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="FB_INIT_EtherCAT" Id="{6a8919a3-5ee3-4a6a-beea-3a7bae9de928}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_INIT_EtherCAT
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+	Busy: BOOL;
+	Disabled: BOOL;
+		Fault: BOOL;
+		Error: BOOL;
+		Moving: BOOL;
+	//	notMoving: BOOL;
+		switchOnDisabled: BOOL;
+		voltageEnabled: BOOL;
+		STAToe: BOOL;
+	STATso: BOOL;
+		Ready : BOOL;
+END_VAR
+VAR
+   	checkingInt: BITARR16;
+	STATha: BOOL;
+	STATila: BOOL;
+	STATtr: BOOL;
+	STATrm: BOOL;
+	STATms: BOOL;
+	STATw: BOOL;
+	STATsod: BOOL;
+	STATqs: BOOL;
+	STATve: BOOL;
+	STATf: BOOL;
+	
+	STATrtso: BOOL;
+   //     bExecute                : BOOL; (* rising edge starts writing to the CoE Object *)
+    //    bError          : BOOL;
+    //    nErrId          : UDINT;
+	//	dwData 		: WORD := 16#002;
+		nCounter : UINT;
+	//	DecelCheckVal : WORD := 16#05;
+	//	AccelCheckVal : WORD := 16#05;
+		
+//		fb_CoEWriteDecel: FB_EcCoESdoWrite;
+//	fb_CoEWriteAccel: FB_EcCoESdoWrite;
+//	fb_CoEReadAccel : FB_EcCOESDORead;
+//	fb_CoEReadDecel : FB_EcCOESDORead;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	Error:=TRUE;
+checkingInt := kidAxis.statusWord ;
+ 	STATha:=  checkingint / 4096  > 0; checkingInt := checkingInt MOD 4096;
+ 	STATila:= checkingInt / 2048 > 0;  checkingInt := checkingInt MOD 2048;
+	STATtr:= checkingInt / 1024 > 0;	checkingInt := checkingInt MOD 1024;
+	STATrm:= checkingInt / 512 > 0;	checkingInt := checkingInt MOD 512;
+	STATms:= checkingInt / 256 > 0;	checkingInt := checkingInt MOD 256;
+	STATw:= checkingInt / 128 > 0;	checkingInt := checkingInt MOD 128;
+	STATsod:= checkingInt / 64 > 0;	checkingInt := checkingInt MOD 64;
+	STATqs:= checkingInt / 32 > 0;	checkingInt := checkingInt MOD 32;
+	STATve:= checkingInt / 16 > 0;	checkingInt := checkingInt MOD 16;
+	STATf:= checkingInt / 8 > 0;	checkingInt := checkingInt MOD 8;
+	STAToe:= checkingInt / 4 > 0;	checkingInt := checkingInt MOD 4;
+	STATso:= checkingInt / 2 > 0;   checkingInt := checkingInt MOD 2;
+	STATrtso:= checkingInt  > 0;
+	Disabled := NOT StatOE;
+	Fault := STATf;
+	Moving := STATtr AND kidAxis.isBusy;	
+	switchOnDisabled:=STATsod;
+	VoltageEnabled := STATve;
+	Ready := STATVE AND STATso AND NOT Busy;
+	Error:=FALSE;
+	
+checkingInt := kidaxis.ErrorCode;
+	
+
+nCounter := nCounter + 1;
+
+IF  kidaxis.statusWord> 600 THEN	
+		KidAxis.OpModeCMD :=2;
+		GVL_DriveParameters.controlWord := 270;
+		//GVL_DriveParameters.controlWord := 128; //Send HALT command to enable switch on
+ELSIF KidAxis.OpModeAct <>2 AND KidAxis.OpModeAct <>0 THEN
+		KidAxis.OpModeCMD :=2;
+ELSIF kidAxis.status.Fault THEN
+		GVL_DriveParameters.controlWord := 128;
+ELSIF kidAxis.status.STATrtso AND NOT kidAxis.status.STATso THEN
+		GVL_DriveParameters.controlWord:= 7;
+
+//GVL_DriveParameters.controlWord:= 7;
+END_IF
+
+
+	
+	
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_INIT_EtherCAT">
+      <LineId Id="337" Count="17" />
+      <LineId Id="356" Count="3" />
+      <LineId Id="361" Count="0" />
+      <LineId Id="360" Count="0" />
+      <LineId Id="335" Count="1" />
+      <LineId Id="3" Count="12" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="164" Count="0" />
+      <LineId Id="310" Count="0" />
+      <LineId Id="141" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

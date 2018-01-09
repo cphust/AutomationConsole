@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="Notes" Id="{04e14a95-756d-4fce-a081-71c336a4669c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK Notes
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+(*
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc									)
+     Brent Miller			 	2016.04.08		0.00.01		Initial Code.
+     		 								 				
+	 Chris Mauban				2016.04.27		0.00.01		Testing Dropbox						
+	
+	 Chris Mauban				2016.05.03		0.00.01		Added Preliminary ErrorID Handling
+	 														Added Headers to modified POU's
+															Added Error Handling for P36A2
+															Cleaned up Layout P36A1, P36A2
+															
+	 Chris Mauban				2016.05.04		0.00.01		Finished P1A3 for remaining NC Parameters
+	 														Linked EL3356 Status Bits
+															Connected EL3356 Error Bits to Beckhoff ErrorID Logic in P40A2
+															Linked P2Position
+	 
+	 Chris Mauban				2016.05.05		0.00.01		Created FB_MoveRelativeTimed
+	 														Created bPlcEstopSignal
+	 														Finished Unlinked SafeIO
+															Created Safety Program Reset Logic
+															Added Control Logic for Load Brake in P42_BrakeControl
+	 
+	 Chris Mauban				2016.05.06		0.00.01		Created Pulse Function Block for Estop LED
+															Modified Estop Feedback Logic
+	 														Added Safety Status Logic
+															
+	 Chris Mauban				2016.05.13		0.00.01		Updated POU's with Standardized Name Structure
+	 														Created FB_MoveAbsoluteTimed
+															Finished FB_Intelligent Flasher
+															
+												
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+//********************************************************************************************************************************\\
+
+*)]]></ST>
+    </Implementation>
+    <LineIds Name="Notes">
+      <LineId Id="3" Count="43" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="F_Timed_Index_1" Id="{0294388f-f1b7-4558-b88f-eb9358c36349}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_Timed_Index_1
+VAR_INPUT
+	
+	dDistance				:	DINT;		//in UU
+	dAccRamp_Time			:	DINT;		//in msec
+	dDecRamp_Time			:	DINT;		//in msec
+	dTotal_Time				:	DINT;		//in msec
+
+END_VAR
+VAR_OUTPUT
+	
+	dIndex_Acceleration		: DINT;		//Unit is msec
+	dIndex_Deceleration 	: DINT;		//Unit is msec
+	dIndex_Velocity 		: DINT;		//Unit is msec
+	dIndex_Distance 		: DINT;		//Unit is msec
+
+	lrTime_AtVelocity		: LREAL;	//Amount of time the index will be at Velocity. Units in msec
+	dDistance_AtVelocity 	: DINT;		//The distance covered while at velocity. 		Units in mm
+	
+	bError					: BOOL;
+
+END_VAR
+VAR
+	
+	lrMyVelocity			: LREAL;	//Calculated Velocity in mm/msec
+	dMyDistance				: DINT;		//Calculated Distance in mm
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+//Calculate time at Velocity
+lrTime_AtVelocity 	:= DINT_TO_LREAL(dTotal_Time) - DINT_TO_LREAL(dAccRamp_Time) - DINT_TO_LREAL(dDecRamp_Time);
+
+//Get Distance
+dMyDistance			:= dDistance;
+
+//Convert to Absolute position (converts to positive if negative is input)
+dMyDistance			:= ABS(dMyDistance);
+
+
+//Calculate Velocity
+//Is profile Trapezoid or Triangle
+IF lrTime_AtVelocity > 0 THEN
+	lrMyVelocity	:= DINT_TO_LREAL(dMyDistance) / ( (DINT_TO_LREAL(dAccRamp_Time)/2) + (DINT_TO_LREAL(dDecRamp_Time)/2) + lrTime_AtVelocity );
+ELSE
+	lrMyVelocity	:= DINT_TO_LREAL(dMyDistance) / ( (DINT_TO_LREAL(dAccRamp_Time)/2) + (DINT_TO_LREAL(dDecRamp_Time)/2) + 0 )  ;  			
+END_IF
+
+dIndex_Velocity		:= ABS(LREAL_TO_DINT( lrMyVelocity * 100));		//Multiplied to get rid of decimal place **may not be needed**
+
+
+//Calculate Acceleration
+dIndex_Acceleration	:= LREAL_TO_DINT( lrMyVelocity / dAccRamp_Time * 1000);	//3 decimal places a value of 0.145 needs to look like 145
+
+//Find Deceleration
+dIndex_Deceleration	:= LREAL_TO_DINT( lrMyVelocity / dDecRamp_Time * 1000);	//3 decimal places a value of 0.145 needs to look like 145
+
+
+//Added information
+dDistance_AtVelocity := LREAL_TO_DINT(lrTime_AtVelocity * lrMyVelocity);
+
+
+//Check for errors
+IF lrTime_AtVelocity < 0 OR dIndex_Acceleration <= 0 OR dIndex_Deceleration <= 0 THEN
+	bError					:= TRUE;
+	dIndex_Velocity			:= 0;
+	dIndex_Acceleration 	:= 0;
+	dIndex_Deceleration 	:= 0;
+	dIndex_Distance 		:= 0;
+	
+ELSE
+	bError					:= FALSE;	
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="F_Timed_Index_1">
+      <LineId Id="3" Count="43" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

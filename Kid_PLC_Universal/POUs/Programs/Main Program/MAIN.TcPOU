@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="MAIN" Id="{dcd2d1b9-1102-4d4b-bab2-268d7306d410}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+		/////////////////////////////////////////////////////ETHERCAT
+	//execute : BOOL :=FALSE;
+	isdone : BOOL; 
+	LoopCount : DINT;
+	
+		///////////////////////////////////////////////////ETHERCAT
+	//PPRASINOS 6/5/2017//mc_WriteParameter	: MC_WriteParameter;
+
+	fbTON_Fan			: TON;
+	fbCOE_Read_Safety	: FB_EcCoESdoRead;
+	fbCOE_Read_DriveTemp: FB_EcCoESdoRead;
+	nBuffer				: INT;
+	nBufferCase			: INT;
+	fbTON_FanCase		: TON;
+	CaseFanDuty			: INT;
+	PLCFanDuty 			:INT;
+	//lrMyValue: UINT;
+	checking : SINT;
+	IsSlave : BOOL;
+END_VAR
+
+VAR PERSISTENT
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//IF kidAxis.modeAccel_FromMom_Raw < 10 THEN RETURN; END_IF
+
+
+checking :=1;
+kidAxis.CheckIn();  //TRY Checking into MOM 
+checking :=2;
+JoyStickMotion();
+checking :=5;
+P42_BrakeControl();
+checking :=3;
+kidAxis.Status(); //Check drive health and Clear faults/enable drives
+checking :=4;
+
+A4_FanControl();						// Controls Hardware Fans powering on & off
+checking :=6;
+LogEvents();
+checking :=7;
+P41_SafetyHandling();
+checking :=8;
+
+kidAxis.axisMoveAbs();
+checking :=9;
+f_Update_HumanReadable();
+checking :=10;
+LoopCount := LoopCount +1;
+
+IF GVL_HMI.MomControl_Bypass THEN
+	bMotion_LED	:= LoopCount MOD 300 > 150;
+END_IF
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Action Name="A4_FanControl" Id="{f05b9aa8-5420-44a3-9237-2a1d2e3e555d}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+// Turns on Case Fan if the Dynamic brake resistors get above 25%
+
+
+
+
+
+// Turns on PLC Fan if the PLC & Safety modules get above 60 deg. C.
+
+fbCOE_Read_Safety(
+	sNetId		:= 	F_CreateAmsNetId(nIds:=GVL_IO.stAmsAddr_EL6900.netId), 
+	nSlaveAddr	:= 	GVL_IO.stAmsAddr_EL6900.port,
+	nSubIndex	:= 16#01, 
+	nIndex		:= 16#FA80, 
+	pDstBuf		:= ADR(nBuffer), 
+	cbBufLen	:= SIZEOF(nBuffer), 
+	bExecute	:= fbTON_Fan.Q,  );
+	
+MAIN.CaseFanDuty := 4 * (GVL_IO.DriveThermalTripPercentage -35); //Drive fan scales from 0 to 100% over the rane of 35-60% thermal trip percentage
+		main.PLCFanDuty :=  10 *(nBuffer - 55); //plc fan scales from 0 to 100% over the rane of 55-65degC
+		GVL_Hardware_IO.bFan_PLC := loopCount MOD 100 < main.PLCFanDuty  ;
+GVL_Hardware_IO.bFan_Case :=  loopCount MOD 100 <MAIN.CaseFanDuty;
+	
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="MAIN">
+      <LineId Id="531" Count="0" />
+      <LineId Id="611" Count="0" />
+      <LineId Id="610" Count="0" />
+      <LineId Id="532" Count="1" />
+      <LineId Id="547" Count="0" />
+      <LineId Id="638" Count="0" />
+      <LineId Id="637" Count="0" />
+      <LineId Id="534" Count="0" />
+      <LineId Id="548" Count="0" />
+      <LineId Id="535" Count="0" />
+      <LineId Id="549" Count="1" />
+      <LineId Id="537" Count="0" />
+      <LineId Id="551" Count="0" />
+      <LineId Id="538" Count="0" />
+      <LineId Id="552" Count="0" />
+      <LineId Id="539" Count="0" />
+      <LineId Id="553" Count="0" />
+      <LineId Id="544" Count="0" />
+      <LineId Id="540" Count="0" />
+      <LineId Id="554" Count="0" />
+      <LineId Id="541" Count="0" />
+      <LineId Id="555" Count="0" />
+      <LineId Id="545" Count="0" />
+      <LineId Id="580" Count="0" />
+      <LineId Id="542" Count="0" />
+      <LineId Id="581" Count="1" />
+      <LineId Id="473" Count="3" />
+      <LineId Id="197" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="MAIN.A4_FanControl">
+      <LineId Id="2" Count="3" />
+      <LineId Id="10" Count="2" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="34" Count="10" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="54" Count="3" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

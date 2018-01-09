@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <DUT Name="E_Custom_Trip_Codes" Id="{f0dde1c3-ad4e-41c7-9616-e2afec02e7fb}">
+    <Declaration><![CDATA[TYPE E_Custom_Trip_Codes :
+(
+	OK 						:= 0,
+	
+	LoadCell_Calib_Error	:= 39,
+	
+	Encoder2_Position_Error := 40,
+	Slave_Drive_Tripped 	:= 41,
+	Master_Drive_Tripped 	:= 42,
+//	Sync_Network_Loss		:= 43,
+	Wrong_Slave_Mode		:= 44,
+	Wrong_Master_mode		:= 45,
+	
+	
+//	AMC_Following_Error		:= 49,	
+	Bad_Setting 			:= 50,
+	Bad_Setting_TestHMI		:= 51,
+	Bad_Setting_GearRaio	:= 52,	
+	
+	Wrong_Drive_Mode		:= 60,
+	System_Model_Unknown	:= 61
+	
+	
+//	PLC_Error_Codes
+//	Parameter_Verification	:= 300,
+//	Parameter_ReadArray		:= 301,
+//	Parameter_WriteArray	:= 302,
+//	Parameter_Comparison	:= 303;
+		
+
+)USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

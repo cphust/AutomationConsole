@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="HMIUpdate" Id="{e90bd3c8-d3fe-4341-b760-c678d5af554e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HMIUpdate
+VAR_INPUT
+	
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	i : INT;
+	LoopCounter : INT;
+	UltimateByPassCounter : INT;
+	
+	
+	
+	Active: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+GVL_HMI.GlobalFault_Code := MAIN.GlobalEstopCode;
+
+IF MAIN.GlobalEstopActive THEN
+	LoopCounter := LoopCounter + 1;
+	ELSE
+	loopcounter := 0;
+END_IF
+
+IF LoopCounter = 0 OR LoopCounter > 400 THEN
+	GVL_HMI.EstopLight := TRUE;
+END_IF
+
+IF LoopCounter > 800 THEN
+	LoopCounter := 0;
+	GVL_HMI.EstopLight := FALSE;
+END_IF
+
+GVL_HMI.Patient1.AgeTimer(IN:= NOT GVL_HMI.Patient1.ActiveSwitch, PT:= T#5S, ET=>GVL_HMI.Patient1.AGE);
+GVL_HMI.Patient2.AgeTimer(IN:= NOT GVL_HMI.Patient2.ActiveSwitch, PT:= T#5S, ET=>GVL_HMI.Patient2.AGE);
+GVL_HMI.Patient3.AgeTimer(IN:= NOT GVL_HMI.Patient3.ActiveSwitch, PT:= T#5S, ET=>GVL_HMI.Patient3.AGE);
+GVL_HMI.Patient4.AgeTimer(IN:= NOT GVL_HMI.Patient4.ActiveSwitch, PT:= T#5S, ET=>GVL_HMI.Patient4.AGE);
+ GVL_HMI.Patient1.ActiveSwitch := FALSE;
+ GVL_HMI.Patient2.ActiveSwitch:= FALSE;
+//IF NOT GVL_HMI.Patient2.ActiveSwitch THEN GVL_HMI.Patient2.ActiveSwitch := TRUE; END_IF
+//IF NOT GVL_HMI.Patient3.ActiveSwitch THEN GVL_HMI.Patient3.ActiveSwitch:= TRUE; END_IF
+GVL_HMI.Patient3.ActiveSwitch:= FALSE;
+GVL_HMI.Patient4.ActiveSwitch:= FALSE;
+//IF NOT GVL_HMI.Patient4.ActiveSwitch THEN GVL_HMI.Patient4.ActiveSwitch:= TRUE; END_IF
+
+
+GVL_HMI.JoyStick1ScreenStateCommanded := main.SerialRemoteNear.ScreenCommanded;
+GVL_HMI.JoyStick2ScreenStateCOmmanded := MAIN.SerialRemoteFar.ScreenCommanded;
+GVL_HMI.JoyStick1DeadManState := main.SerialRemoteNear.DeadmanPressed>0;
+GVL_HMI.JoyStick2DeadManState := MAIN.SerialRemoteFar.DeadmanPressed>0;
+GVL_HMI.Joystick1ZAxisPressed := MAIN.SerialRemoteNear.ZAxisPressed>0;
+GVL_HMI.JoyStick2ZAxisPressed :=MAIN.SerialRemoteFar.ZAxisPressed>0;
+GVL_HMI.JoyStick1SyncPressed := MAIN.SerialRemoteNear.SyncPressed>0;
+GVL_HMI.JoyStick2SyncPressed:= MAIN.SerialRemoteFar.SyncPressed>0;
+GVL_HMI.JoyStick1Estop := main.SerialRemoteNear.EstopPressed>0;
+GVL_HMI.Joystick2Estop := MAIN.SerialRemoteFar.EstopPressed>0;
+GVL_HMI.JoyStick1Age := MAIN.SerialRemoteNear.Age;
+GVL_HMI.JoyStick2Age := MAIN.SerialRemoteFar.Age;]]></ST>
+    </Implementation>
+    <LineIds Name="HMIUpdate">
+      <LineId Id="36" Count="0" />
+      <LineId Id="34" Count="1" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="53" Count="1" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="56" Count="1" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="109" Count="0" />
+      <LineId Id="112" Count="1" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="107" Count="0" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="136" Count="11" />
+      <LineId Id="133" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

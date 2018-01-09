@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <DUT Name="EtherCAT_Kid" Id="{346e41a4-d50b-4079-a5e1-2452d40281b4}">
+    <Declaration><![CDATA[TYPE EtherCAT_Kid :
+STRUCT
+	////////EtherCAT MoeAbsolute
+	AxisID : INT := 0;
+	//Status : FB_INIT_EtherCAT;
+	//ReadStatus : FB_ReadStatus_EtherCAT := Status;
+	//NcToPLC: FB_NcToPLC_Ethercat;
+	
+	//axisMoveAbs : FB_MoveAbsolute_EtherCAT;
+	CheckIn : FB_CheckIn_EtherCAT;
+	//ParameterReader : FB_EtherCATReader;
+	//modeVel : DINT; //for hmi only
+
+	// 1: System error sent from MOM
+	
+	//TargetPos : DINT;  //target position for move
+	
+	//modeAcc : DINT; //Maximum allowed Acceleration
+	//modeJerk: UINT:= 80; //Maximum change in Accel per loop
+	modeWindow : DINT:= 2000; //Allowed window for move to be complete
+	leaveEnabled : BOOL := FALSE;
+	//isBusy : BOOL := FALSE;
+	//StartBit: BOOL :=FALSE;
+	//RawToUU: LREAL;
+//Velocity mode	profile EtherCAT Actual Values
+
+	
+
+	//VelDem_UU : DINT;
+//Limits
+	//dnUpLimit : DINT;
+	//dnDownLimit: DINT;
+	
+
+
+	
+	
+	//HomeOffset_UU_R AT %I* : DINT;
+	//HomeOffset_UU_W AT %Q* : DINT;
+	
+
+	CheckInt : DINT;
+	bComTimeOutError : BOOL;
+	//currentPosition: DINT;
+	
+	   RMT_EstopActivate : BOOL;
+  RMT_DeadManPressed : BOOL;
+  
+  //EtherCAT 
+    SetAdminMin : BOOL;
+  SetAdminMax : BOOL;
+  	  ResetCom : BOOL;
+  SafteyReset : BOOL;
+	UpdateWord_toMom  AT %I* : UDINT;
+	HomedPosition_toMom AT %I* : DINT;
+	IsUltimateLimitReached AT %I* : BYTE;
+	IsHardUpLimitReached AT %I* : BYTE;
+	IsHardDownLimitReached AT %I* : BYTE;
+	MotionControllerErrorCode AT %I* :  UINT;
+
+
+	 Load AT %I* : DINT;
+	 Speed AT %I* :DINT;
+	
+	 KidEstopCode AT %I* : DINT;
+	 		 Address AT %I*: AMSADDR;
+	modeVel_FromMom : DINT;
+modeAccel_FromMom : DINT;
+ModeDecel_FromMom : DINT;
+ScalingNumber : INT := 100; 		 
+	 UpdateWord_FromMom AT %Q* : UDINT; //UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop
+	 targetpos_FromMom_Raw AT %Q* : DINT ; //FROM MOM
+	 modeVel_FromMom_Raw AT %Q* : DINT ; //FROM MOM
+	 modeAccel_FromMom_Raw AT %Q* : DINT ;
+	 modeDecel_FromMom_Raw AT %Q* : DINT ;
+	 IsUltimateLimitBypassed AT %Q* : BYTE;
+	byPassSoftUp : BOOL;
+	byPassSoftDown : BOOL;
+	byPassHardup : BOOL;
+	byPassHardDown : BOOL;
+	byPassUltimate : BOOL;
+	
+	
+	 //PAccel AT %I* : DINT  ;  //0x6048 vl_veloctity_acceleration
+	// pDecel AT %I* : DINT ; //0x6049 vl_velocity_deceleration
+	 //pVelMax AT %I* : INT; // 0x6042 vl_target_velocity
+	 //OpModeCMD AT %I* : USINT := 2;; // 0x6060 Page 39 MODES OF OPERATION COMMAND 2-vl velocity mode  7 = interpolated position mode
+ //pVelDem	AT %Q* : INT;
+	// statusWord  AT %Q* : BITARR16; //0x6041
+	// actualPos AT %Q*: DINT;// 0x6064 Position_actual_value
+	// actualVel AT %Q*: DINT;
+	// OpModeAct AT %Q* : USINT; // 0x6061 Page 39 MODES OF OPERATION DISPLAY read only result of changing 0x6060
+	// ErrorCode AT %Q* : UINT;
+	 
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

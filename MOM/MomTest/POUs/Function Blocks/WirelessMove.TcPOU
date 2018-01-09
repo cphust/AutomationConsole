@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="WirelessMove" Id="{b316f284-7991-4299-9f9b-1c26edbfde02}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK WirelessMove 
+VAR_INPUT
+
+	sm : FB_SerialCom_Remote; //SerialRemote Assigned to Gantry
+	WindowScaling : INT := 1; //Scaling Factor for target window distance
+END_VAR
+VAR
+	XTar : DINT;
+	YTar : DINT;
+END_VAR
+VAR_IN_OUT
+		HookX : EtherCat_Kid;
+	HookY : EtherCat_Kid;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF sm.DeadmanPressed >=1 AND SM.Age < T#800MS THEN
+	IF Hookx.currentPosition + (((ABS(sm.xAxis) * sm.xAxis) * WindowScaling) / -50) > -1000000 OR Hookx.currentPosition + (((ABS(sm.xAxis) * sm.xAxis) * WindowScaling) / -50) < 1000000 THEN
+		XTar := Hookx.currentPosition + (((ABS(sm.xAxis) * sm.xAxis) * WindowScaling) / -50);
+	END_IF
+	IF HookY.currentPosition + (((ABS(sm.YAxis) * sm.YAxis) * WindowScaling) / -25) > -1000000 OR HookY.currentPosition + (((ABS(sm.YAxis) * sm.YAxis) * WindowScaling) / -25) < 100000 THEN
+			YTar := HookY.currentPosition + (((ABS(sm.YAxis) * sm.YAxis) * WindowScaling) / -25);
+	END_IF
+
+	main.XTAR := xtar;
+	main.YTar := Ytar;
+	Main.Kid[hookX.CheckIn.KidID].TargetPos := XTar;
+	Main.Kid[Hooky.CheckIn.KidID].TargetPos := YTar;
+	//HookY.TargetPos := YTar;
+	ELSE
+		Main.Kid[hookX.CheckIn.KidID].TargetPos := Main.Kid[hookX.CheckIn.KidID].Currentposition;
+		Main.Kid[Hooky.CheckIn.KidID].TargetPos := Main.Kid[Hooky.CheckIn.KidID].CurrentPosition;
+
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="WirelessMove">
+      <LineId Id="17" Count="0" />
+      <LineId Id="59" Count="2" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="62" Count="1" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="16" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

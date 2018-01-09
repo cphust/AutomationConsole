@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <GVL Name="GVL_Safe_IO" Id="{b5729c83-c4ce-46cc-819e-b49ef6717e45}">
+    <Declaration><![CDATA[
+
+VAR_GLOBAL
+	
+	bPlcEstopSignal				AT %Q*	: BOOL := TRUE;				//PLC Estop Signal
+	
+//******* Safety System Global **********//	
+
+	bCom_Error					AT %I*	: BOOL;				//Safety System Communication Error, Virtual
+	bOut_Error					AT %I*	: BOOL;				//Safety System Output Error, Virtual
+	bFB_Error					AT %I*	: BOOL;				//Safety System Function Block Error, PLC
+	bAck_Error					AT %Q*	: BOOL;				//Safety System Error Acknowledgement, Virtual
+//******* Safety System 'FBEstop1' **********//	
+
+	bES1_Cir1_Local				AT %I*	: BOOL;				//Local E-Stop Circuit 1, EL1904(A), Input 1
+	bES1_Cir2_Local				AT %I*	: BOOL;				//Local E-Stop Circuit 2, EL1904(A), Input 3
+	bES_Error_Local				AT %I*	: BOOL;				//Safety System Output Error, PLC
+	bES_Restart_Local			AT %Q*	: BOOL;				//Emergency Stop Restart, PLC
+	
+//******* Safety System Ultimate Hard Limits **********//
+	
+//******* Safety System 'FB_Hard_Down_Slack' **********//
+	
+//******* Safety System 'FB_Hard_Up_CrossG' **********//
+	
+	
+	bLimit_Ultimate					AT %I*	: BOOL;			//Ultimate Limit Switch Input, EL1904(A), Input 2
+	bLimit_Hard_Up				AT %I*	: BOOL;				//Limit-Switch UP, EL1904(B), Input 2
+	bLimit_Hard_Down			AT %I*	: BOOL;				//Limit-Switch DOWN, EL1904(B), Input 4
+	bLimit_Ultimate_Bypass_Enable	AT %Q*	: BOOL;			//Ultimate Limit Switch Bypass Enable, PLC
+	bHard_Up_Bypass_Enable		AT %Q*	: BOOL;				//Bypass the Up Hard Limit, PLC
+	bHard_Down_Bypass_Enable	AT %Q*	: BOOL;				//Bypass the Down Hard Limit, PLC
+	bLimit_Software_Bypass 	: BOOL;
+//bLimit_Ultimate_Status			AT %I*	: BOOL;			//Ultimate Limit Switch Safety System Status, PLC
+	//bHardDn_Error				AT %I*	: BOOL;				//Safety System Output Error, PLC
+	//bHardUp_Error				AT %I*	: BOOL;				//Safety System Output Error, PLC
+	bSlack_Line					AT %I*	: BOOL;				//Slack-Line Sensor, EL1904(A), Input 4
+	bCross_Groove				AT %I*	: BOOL;				//Cross-Groove Sensor, EL1904(B), Input 1
+	bSlack_Line_Bypass_Enable	AT %Q*	: BOOL;				//Slack-Line Sensor Bypass, PLC
+	bCross_Groove_Bypass_Enable AT %Q*	: BOOL;				//Cross-Groove Sensor Bypass, PLC
+	
+	
+//******* Safety System Brake Release **********//
+	
+
+	bEmergency_Brake_Release	AT %Q*	: BOOL;				//Emergency Brake Release, EL1904(B), Input 3
+	bEnable_Emergency_Brake_Release_Button	AT %Q*	: BOOL;	//Activate Emergency Brake Release, PLC
+	bRelease_Motor_Brake		AT %Q*	: BOOL;				//Motor Brake Release, PLC
+	bRelease_Load_Brake			AT %Q*	: BOOL;				//Load Brake Release, PLC
+	bMotor_Not_Moving			AT %Q*	: BOOL;				//Motor is not moving, PLC
+	//bLimit_Ultimate_Bypass_Enable_Status	AT %I*	: BOOL;	//Ultimate Bypass Enable Safety System Status, PLC
+	bEmergency_Brake_Release_Status		AT %I*	: BOOL;		//Emergency Brake Release Safety System Status, PLC
+
+	
+//******* Safety System Brake Release **********//
+		
+	bFast_Decel					AT %I*	: BOOL;				//Fast Decel, Used for Limit Switch Decel
+	bES_Decel					AT %I*	: BOOL;				//Emergency Fast Decel, Used for Estop or Ultimate Limit Switch
+	bContactor					AT %Q*	: BOOL;				//Contactor Output, PLC
+	bContactor_State			AT %I*	: BOOL;				//Contactor Output State, PLC
+	
+//******* Safety System General IO **********//
+	
+//	bSafety_Reset				AT %I*	: BOOL;				//Initializes a Safety Reset command
+	
+	bDrive_STO_State			AT %Q*	: BOOL;				//Safety Output to the drive for the STO Status
+	//bContactor_STO_Status		AT %I*	: BOOL;				//Contactor Output Safety System Status
+	//nEL6900_Temp_Sensor			AT %I*	: INT;				//Temp read for the Safety PLC Temperature
+
+	
+//******* Safety System Status		 **********//	
+
+	bES_Local_Status			AT %I*	: BOOL;				//E-Stop Function Block Safety System Status
+	nSafetySystem_Status				: INT;				//Safety System Status
+	bNot_Moving_Bypass					: BOOL;
+	bSafetySystem_Reset					: BOOL;				// HMI safety reset
+	nP2_EncoderWindow					: INT;
+	//bTSReady					AT %I*	: BOOL;
+	
+//******* External Safety System	 **********//
+	
+	//bExternalEstopEn 			AT %Q* : BOOL;
+	//bES_Restart_External 		AT %Q*: BOOL;
+	//bES_External_Status			AT %I*: BOOL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

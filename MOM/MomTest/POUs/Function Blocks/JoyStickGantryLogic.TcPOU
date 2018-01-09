@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="JoyStickGantryLogic" Id="{32d788c7-386b-4f66-8e8f-54d6fd322416}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK JoyStickGantryLogic
+VAR_INPUT
+	HookX : EtherCAT_Kid;
+	HookY : EtherCAT_Kid;
+	MaxTime : TIME;
+	Patient : ARRAY[0..4] OF patient;
+	ModeCheck : DINT;
+END_VAR
+
+VAR_IN_OUT
+		sm : FB_SerialCom_Remote; //SerialRemote Assigned to Gantry
+END_VAR
+
+VAR_OUTPUT
+	TrackedPatient : INT;
+END_VAR
+
+VAR
+WirelessMove : WirelessMove;
+X: INT;
+DeadManState : BOOL;
+
+END_VAR
+////Patient1 : Patient;
+//Patient2 : Patient;
+//Patient3 : Patient;
+//Patient4 : Patient;]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF sm.SyncPressed = 5  THEN
+	GVL_HMI.GUIGlobalReset := TRUE;
+	RETURN;
+END_IF
+
+
+IF MAIN.GlobalEstopActive THEN
+	sm.ScreenCommanded := 51; 
+	TrackedPatient := 0;
+	RETURN;
+ELSE
+	IF sm.ScreenCommanded = 51 THEN sm.ScreenCommanded := 73; END_IF
+END_IF
+
+
+IF sm.ScreenActive =73 OR sm.ScreenActive = 74 OR sm.ScreenActive = 72 THEN
+	
+
+	sm.ScreenCommanded := 73;
+	FOR X := 1 TO 4 DO
+		IF ((Patient[x].X - HookX.currentPosition) * (Patient[x].X - HookX.currentPosition)) + ((Patient[x].Y - HookY.currentPosition) * (Patient[x].Y - HookY.currentPosition)) >0 THEN
+			IF SQRT(((Patient[x].X - HookX.currentPosition) * (Patient[x].X - HookX.currentPosition)) + ((Patient[x].Y - HookY.currentPosition) * (Patient[x].Y - HookY.currentPosition))) < GVL_HMI.GantryLockWindow 
+				AND Patient[x].AGE < T#500MS THEN
+				sm.ScreenCommanded := 74;
+				IF sm.ZAxisPressed > 1 AND sm.DeadmanPressed < 0 AND sm.ScreenActive = 74 THEN
+					TrackedPatient := X;
+					sm.ScreenCommanded := 74+ INT_TO_BYTE(X);
+				END_IF
+			END_IF
+		END_IF
+	END_FOR
+
+END_IF
+
+IF sm.ZAxisPressed > 2 AND sm.DeadmanPressed > 2 THEN TrackedPatient := 0; sm.ScreenCommanded := 74; END_IF
+
+IF sm.DeadmanPressed >= 2 AND sm.ScreenActive < 75 AND sm.ScreenCommanded > 71 THEN
+	ModeCheck := 1;
+	WirelessMove(HookX := HookX, HookY:= HookY, sm :=SM, WindowScaling := 1);
+	DeadmanState := TRUE;
+ELSIF sm.DeadmanPressed < 1 AND sm.ScreenActive > 74 AND sm.ScreenCommanded > 74  AND patient[TrackedPatient].AGE < T#500MS AND sm.Age < T#1000MS THEN
+		ModeCheck := 2;
+	DeadmanState := TRUE;
+	MAIN.Kid[Hookx.CheckIn.KidID].TargetPos := Patient[TrackedPatient].X;
+	MAIN.Kid[HookY.CheckIn.KidID].TargetPos := Patient[TrackedPatient].Y;
+ELSIF sm.DeadmanPressed < 0 THEN
+		ModeCheck := 3;
+	DeadManState := FALSE;
+ELSE
+		ModeCHeck := 4;
+
+END_IF
+
+
+x:= TrackedPatient;
+IF TrackedPatient <> 0 THEN
+	IF( Patient[x].x < -500 OR Patient[x].x > 3900 OR Patient[x].y > 9500 OR Patient[x].y < -500 OR sm.Age > T#2000MS OR Patient[x].AGE > T#500MS) THEN
+		ModeCheck := ModeCheck + 10;
+		sm.ScreenCommanded := 73;
+		TrackedPatient := 0;
+	END_IF
+	if patient[x].Age > MaxTime then Maxtime := Patient[x].AGE; END_IF
+END_IF
+
+
+
+IF sm.EstopPressed > 1 THEN
+	MAIN.JoyStickEstopActive := TRUE;
+	
+END_IF
+
+
+IF HookX.CheckIn.KidID = 1 THEN
+	MAIN.JoyStick1DeadMan:=DeadmanState;
+ELSE
+	MAIN.JoyStick2DeadMan := DeadmanState;
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="JoyStickGantryLogic">
+      <LineId Id="110" Count="2" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="152" Count="0" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="161" Count="1" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="40" Count="1" />
+      <LineId Id="253" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="47" Count="1" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="67" Count="2" />
+      <LineId Id="96" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="97" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="192" Count="2" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="223" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="191" Count="0" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="108" Count="0" />
+      <LineId Id="107" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
