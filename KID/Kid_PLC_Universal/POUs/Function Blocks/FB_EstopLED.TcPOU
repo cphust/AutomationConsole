@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_EstopLED" Id="{1db509ae-796c-47b6-b418-89bcbd0efe14}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EstopLED
+VAR_INPUT
+	bEstopSignal : BOOL;
+	bSafetySystemSignal : BOOL;
+END_VAR
+VAR_OUTPUT
+	bLEDOutput : BOOL;
+END_VAR
+VAR
+	tOnBlinkTime : TIME;
+	nNumOfOnBlinks : INT;
+	tLEDOffTime : TIME;
+	fbLEDPulse: FB_Pulse;
+	fbBlinkPulse: FB_Pulse;
+	bBlinkEn: BOOL;
+	tTotalTimeOn: TIME;
+	tOffBlinkTime: TIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT bEstopSignal THEN
+	tOnBlinkTime := T#250MS;
+	tOffBlinkTime := T#250MS;
+	nNumOfOnBlinks := 3;
+	tLEDOffTime := T#1000MS;
+	bBlinkEn := TRUE;
+	bLEDOutput := fbBlinkPulse.bPulse;	
+ELSIF NOT bSafetySystemSignal THEN
+	tOnBlinkTime := T#1000MS;
+	tOffBlinkTime := T#250MS;
+	nNumOfOnBlinks := 1;
+	tLEDOffTime := T#1000MS;
+	bBlinkEn := TRUE;
+	bLEDOutput := fbBlinkPulse.bPulse;	
+ELSE
+	bLEDOutput := TRUE;	
+	bBlinkEn := FALSE;
+END_IF
+
+tTotalTimeOn := DINT_TO_TIME((TIME_TO_DINT(tOnBlinkTime) * (nNumOfOnBlinks)) + (TIME_TO_DINT(tOffBlinkTime) * (nNumOfOnBlinks - 1)));
+fbLEDPulse(bEnable:= bBlinkEn, tTimeOn:= tTotalTimeOn, tTimeOff:= tLEDOffTime, bPulse=> );
+fbBlinkPulse(bEnable:= fbLEDPulse.bPulse, tTimeOn:= tOnBlinkTime, tTimeOff:= tOffBlinkTime, bPulse=> );]]></ST>
+    </Implementation>
+    <LineIds Name="FB_EstopLED">
+      <LineId Id="13" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="43" Count="4" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="49" Count="1" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="F_Scale_LR" Id="{0b2ea60f-dbbd-46cb-ae73-26826c673703}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_Scale_LR : LREAL
+VAR_INPUT
+	
+	lrInputWeight		:	LREAL;	//Weight (g) actual weight
+	lrMinWeight			:	LREAL; 	//Weight (g)
+	lrMaxWeight			:	LREAL;	//Weight (g)
+	lrAtMinWeight		:	LREAL;	//Min Accel/decel value (mm/s2)
+	lrAtMaxWeight		:	LREAL;	//Max Accel/Decel value (mm/s2)
+	bLimitOutput		:	BOOL;	//Is the function Used?
+	
+END_VAR
+VAR
+	lrValue: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+//NewInputValue is Scaled between the min & max output values
+//
+IF 	lrMinWeight 		< 0 OR
+	lrMaxWeight			<= 0 OR
+	lrAtMinWeight	<= 0 OR
+	lrAtMaxWeight	<= 0 THEN
+	lrValue := 0;
+ELSIF lrInputWeight < lrMinWeight THEN
+	lrValue	:= lrAtMinWeight;
+
+ELSE
+	IF bLimitOutput = TRUE THEN
+		lrValue 	:=	(((lrMaxWeight - lrInputWeight) / lrMaxWeight) * (lrAtMinWeight) )  ;
+		IF lrValue	< lrAtMaxWeight THEN
+			lrValue	:= lrAtMaxWeight;
+		END_IF
+	ELSE
+		lrValue :=	lrAtMinWeight;	
+	END_IF
+END_IF
+
+F_Scale_LR	:= lrValue;
+]]></ST>
+    </Implementation>
+    <LineIds Name="F_Scale_LR">
+      <LineId Id="3" Count="24" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

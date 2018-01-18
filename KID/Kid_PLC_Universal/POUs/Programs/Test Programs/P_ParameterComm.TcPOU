@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_ParameterComm" Id="{8375a1a9-74c4-4479-9932-6deb80094c2a}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_ParameterComm
+VAR
+	fbMC_Power: MC_Power;
+	fbMC_WriteParameter: MC_WriteParameter;
+	bWrite: BOOL;
+	fbMC_MoveAbsolute: MC_MoveAbsolute;
+	fb_MC_MoveAbsolute: MC_MoveAbsolute;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//This function calls the ReadStatus of the axis.	
+kidAxis.ReadStatus();
+
+
+fbMC_Power(
+	Axis:= kidAxis, 
+	Enable:= GVL_Modes.bDrive_Enable, 
+	Enable_Positive:= , 
+	Enable_Negative:= , 
+	Override:= GVL_Modes.lrDrive_Override, 
+	BufferMode:= , 
+	Options:= , 
+	Status=> , 
+	Busy=> , 
+	Active=> , 
+	Error=> , 
+	ErrorID=> );
+	
+
+
+
+fbMC_WriteParameter(
+	Axis:= kidaxis, 
+	Execute:= bWrite, 
+	ParameterNumber:= AxisEnPositionLagMonitoring, 
+	Value:= 1, 
+	Done=> , 
+	Busy=> , 
+	Error=> , 
+	ErrorID=> );
+	
+fbMC_MoveAbsolute.Position := GVL_Index.Target_Down;
+	
+	
+fbMC_MoveAbsolute(
+	Axis:= kidAxis, 
+	Execute:= bStart_Motion, 
+	Position:= , 
+	Velocity:= 360, 
+	Acceleration:= , 
+	Deceleration:= , 
+	Jerk:= , 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );	
+	]]></ST>
+    </Implementation>
+    <Action Name="A_MC_MoveAbsolute" Id="{617cf1b6-5be2-46ff-bdaa-f96c512dd327}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+
+fb_MC_MoveAbsolute(
+	Axis:= kidAxis, 
+	Execute:= bStart_Motion, 
+	Position:= 0, 
+	Velocity:= , 
+	Acceleration:= , 
+	Deceleration:= , 
+	Jerk:= , 
+	BufferMode:= , 
+	Options:= , 
+	Done=> , 
+	Busy=> , 
+	Active=> , 
+	CommandAborted=> , 
+	Error=> , 
+	ErrorID=> );]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P_ParameterComm">
+      <LineId Id="3" Count="50" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P_ParameterComm.A_MC_MoveAbsolute">
+      <LineId Id="2" Count="18" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,379 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="P41_SafetyHandling" Id="{9d2e5585-56b4-4cea-86ef-0c113c6e7917}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P41_SafetyHandling
+VAR
+	ByPassCounter : DINT;
+//	fbIntelligentFlasher: FB_IntelligentFlasher;
+	//bFlasher: BOOL;
+	//bFlasher_Enable: BOOL;
+	nCase: INT;
+	fbTON: TON;
+	nErrorID: INT;
+	//fb_ES_LED: FB_Pulse;
+	bTS_Reset: BOOL;
+	fbClosetLED: FB_EstopLED;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF(GVL_Safe_IO.bHard_Down_Bypass_Enable OR GVL_Safe_IO.bHard_Up_Bypass_Enable OR 
+	GVL_Safe_IO.bLimit_Ultimate_Bypass_Enable OR GVL_HMI.MomControl_Bypass OR bLimit_Software_Bypass) THEN
+	ByPassCounter := ByPassCounter + 1;
+		IF(ByPassCOunter > 200000) or not GVL_Hardware_IO.bLocal_Keyswitch_Return THEN 
+			bLimit_Software_Bypass := FALSE;
+			GVL_Safe_IO.bHard_Down_Bypass_Enable := FALSE;
+ 			GVL_Safe_IO.bHard_Up_Bypass_Enable := FALSE;
+			GVL_Safe_IO.bLimit_Ultimate_Bypass_Enable := FALSE;
+  			GVL_HMI.MomControl_Bypass := FALSE;
+			ByPassCounter := 200000;
+		END_IF
+	ELSE
+		ByPassCounter :=0;
+END_IF
+
+
+GVL_Hardware_IO.bLocal_Keyswitch_Supply := TRUE;		//if not locked out or remote connected, then turn on keyswitch supply
+			IF (GVL_Hardware_IO.bLocal_Keyswitch_Return OR GVL_io.kidAxis.CheckIn.momControl) AND 
+			   ( NOT kidAxis.CheckIn.MomEstopActivated OR kidAxis.CheckIn.ResetSaftey) AND 
+				(GVL_SAfe_IO.bLimit_Ultimate OR GVL_Safe_IO.bLimit_Ultimate_Bypass_Enable)	THEN
+					GVL_Safe_IO.bContactor := TRUE;						//turn on contactor
+					GVL_HardWare_IO.bHMI_Power := TRUE;		//turn on HMI Screen
+			//		GVL_Modes.bDrive_Enable := TRUE;			
+			ELSE
+				GVL_Safe_IO.bContactor := FALSE;		//turn off contactor
+			
+				GVL_Modes.bDrive_Enable := FALSE;
+			END_IF
+			
+	IF kidAxis.Status.STATf THEN GVL_Safe_IO.bContactor := False; END_IF
+	
+	GVL_Safe_IO.bPlcEstopSignal := GVL_Safe_IO.bES1_Cir1_Local AND GVL_Safe_IO.bES1_Cir2_Local;
+//EStop LED
+	A1_EStop_LED();
+
+//Safety System Reset sequence
+	A2_SafetyReset();
+	
+//P2 Encoder Comparison
+	A4_P2Comparison();	
+
+//Turn on Emergency Brake Release LED when Button is Enabled
+	IF GVL_Hardware_IO.bUPS_Buffering THEN
+		bEnable_Emergency_Brake_Release_Button := TRUE;
+		GVL_HardWare_IO.bHMI_Power := FALSE;	
+		bEm_Brake_Release_LED := 1;
+		
+	ELSE 
+		bEnable_Emergency_Brake_Release_Button := FALSE;
+		bEm_Brake_Release_LED := 0;
+	END_IF
+
+
+	
+P_Safety_Mapping();
+P_SafetyErrors();
+(*
+GVL_Modes.bSafety_Enable_Forward 	:= (GVL_Safe_IO.bLimit_Hard_Up OR GVL_Safe_IO.bHard_Up_Bypass_Enable)
+										AND (GVL_Safe_IO.bCross_Groove OR GVL_Safe_IO.bCross_Groove_Bypass_Enable); //Belt Driven = Prox
+										
+	GVL_Modes.bSafety_Enable_Reverse	:= (GVL_Safe_IO.bLimit_Hard_Down OR GVL_Safe_IO.bHard_Down_Bypass_Enable)
+										AND (GVL_Safe_IO.bSlack_Line OR GVL_Safe_IO.bSlack_Line_Bypass_Enable);		//Belt Driven = Prox
+*)]]></ST>
+    </Implementation>
+    <Action Name="A1_EStop_LED" Id="{d346f9e9-2a0d-4ad6-af5a-e1eaee11d186}">
+      <Implementation>
+        <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.06		0.00.01		Initial Code
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+fbClosetLED(bEstopSignal:= GVL_Safe_IO.bES1_Cir1_Local AND GVL_Safe_IO.bES1_Cir2_Local, bSafetySystemSignal:= GVL_Safe_IO.bES_Decel, bLEDOutput=> GVL_Hardware_IO.bES_Local_LED);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A2_SafetyReset" Id="{17acbfec-1a4a-4f68-8841-129dce54b734}">
+      <Implementation>
+        <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.05		0.00.01		Removed HardUp/Dn Restarts, removed If Statements.  Using an Else
+	 														will always force a No Reset
+															Added Case Statement so the rising edge of the Reset will Reset Safety System Errors
+															and reset Safe Estop FB.
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+
+
+
+//SAFETY OUTPUTS
+
+//Ouput to safety program
+IF bSafetySystem_Reset THEN
+	bTS_Reset := TRUE;
+GVL_Safe_IO.bAck_Error	:=	TRUE;
+END_IF
+
+CASE nCase OF
+	0: //Wait for Rising Edge of Reset
+		IF bTS_Reset THEN
+			fbTON(IN:= FALSE, PT:= T#500MS, Q=> , ET=> );
+			nErrorID := 0;
+			nCase := nCase + 10;
+		END_IF
+
+		
+	10: //Reset System Errors
+		fbTON(IN:= TRUE, PT:= T#500MS, Q=> , ET=> ); //Allow 500ms to Reset System Errors
+		GVL_PLC.bSafetyErrAckInput 	:=	TRUE;
+		IF NOT GVL_PLC.bSafetyError THEN
+			GVL_PLC.bSafetyErrAckInput	:=	FALSE;
+			fbTON(IN:= FALSE, PT:= T#500MS, Q=> , ET=> );			
+			nCase := nCase + 10;
+		END_IF
+		IF fbTON.Q THEN	//Unable to Reset Safety System
+			nErrorID := nCase;
+			nCase := 9999;
+		END_IF
+	
+	20: //Reset All Estop Function Block
+		fbTON(IN:= TRUE, PT:= T#2000MS, Q=> , ET=> ); //Allow 500ms to Reset Estop Function Block
+		GVL_PLC.bLocalEstopRestart	:= TRUE;
+		nCase := nCase + 10;
+		
+	30: 
+		fbTON(IN:= TRUE ); //Allow 500ms to Reset Estop Function Block
+		GVL_PLC.bLocalEstopRestart	:= FALSE;
+		nCase := nCase + 10;
+		GVL_Safe_IO.bAck_Error	:=	FALSE;
+		
+	40:
+		fbTON(IN:= TRUE ); //Allow 500ms to Reset Estop Function Block
+		IF GVL_Safe_IO.bES_Local_Status THEN	
+			fbTON(IN:= FALSE, PT:= T#2000MS, Q=> , ET=> );
+			nCase := nCase + 10;
+		ELSE
+			IF fbTON.Q THEN	//Unable to Reset Estop Function Block
+				nErrorID := nCase;
+				nCase := 9999;
+			ELSE
+				nCase := nCase - 20; //Toggle Reset Again
+			END_IF
+		END_IF
+		
+	50: //Reset All Estop Function Block
+		fbTON(IN:= TRUE, PT:= T#2000MS, Q=> , ET=> ); //Allow 500ms to Reset Estop Function Block
+
+		nCase := nCase + 10;
+		
+	60: 
+		fbTON(IN:= TRUE ); //Allow 500ms to Reset Estop Function Block
+
+		nCase := nCase + 10;
+		
+	70: //Reset External Estop Function Block
+		fbTON(IN:= TRUE ); //Allow 500ms to Reset Estop Function Block
+		
+			IF fbTON.Q THEN	//Unable to Reset Estop Function Block
+				nErrorID := nCase;
+				nCase := 9999;
+			ELSE
+				nCase := nCase - 20; //Toggle Reset Again
+			END_IF
+	
+		
+	9999: //Error Handling
+		//GVL_PLC.udnFlyhousePLCErrorID := DINT_TO_UDINT(16#41000 + 16#100 + nCase);	//Program# + Action# + Case#
+		nCase := 10000;
+		
+	10000:
+		GVL_PLC.bSafetyErrAckInput 		:= FALSE;
+		GVL_PLC.bLocalEstopRestart		:= FALSE;
+		bTS_Reset						:= FALSE;
+		IF NOT bSafetySystem_Reset THEN
+			nCase := 0;
+			ELSE
+			 bSafetySystem_Reset := FALSE;
+		END_IF
+END_CASE
+
+
+	
+	
+
+	
+	]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A3_SafetyStatus" Id="{318c895b-f119-4c77-83e7-4c54c5691412}">
+      <Implementation>
+        <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.06		0.00.01		Initial Code
+	 Brent Miller				2016.06.15		0.00.02		Added nSafetySystem_Status to safety system readouts so 1 var. could be
+															used to tell the status of all of the safety system components. Currently
+															does not operate properly.			
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+//TO-DO: (BAM) The nSafetySystem_Status does not update with the correct value
+
+//Estop Function Block
+IF NOT GVL_Safe_IO.bES_Local_Status THEN
+	GVL_Safe_IO.nSafetySystem_Status := 0;//System OK
+	IF NOT GVL_Safe_IO.bES1_Cir1_Local OR NOT GVL_Safe_IO.bES1_Cir2_Local THEN
+		GVL_Safe_IO.nSafetySystem_Status := 1;//Local Estop Pressed
+	ELSIF NOT bLimit_Ultimate THEN
+		GVL_Safe_IO.nSafetySystem_Status := 2;//Ultimate LIMIT Triggered
+	ELSIF NOT bPlcEstopSignal THEN
+		GVL_Safe_IO.nSafetySystem_Status := 3;//Plc Estop
+	ELSE //Motor did not stop after 500ms when the following triggered
+		IF GVL_Safe_IO.bSlack_Line THEN
+			GVL_Safe_IO.nSafetySystem_Status := 4;//Slack Line
+		ELSIF GVL_Safe_IO.bLimit_Hard_Down THEN
+			GVL_Safe_IO.nSafetySystem_Status := 5;//Hard Down Limit
+		ELSIF GVL_Safe_IO.bLimit_Hard_Up THEN
+			GVL_Safe_IO.nSafetySystem_Status := 6;//Hard Up Limit
+		ELSIF GVL_Safe_IO.bCross_Groove THEN
+			GVL_Safe_IO.nSafetySystem_Status := 7;//Gross Groove
+		END_IF
+	END_IF
+END_IF
+
+//Safety System Comm Check
+IF GVL_Safe_IO.bCom_Error THEN
+	GVL_Safe_IO.nSafetySystem_Status := 20;//Safety System Comm Error
+ELSIF GVL_Safe_IO.bAck_Error THEN
+	GVL_Safe_IO.nSafetySystem_Status := 21;//Safety System Acknolegment Error
+ELSIF GVL_Safe_IO.bES_Error_Local THEN
+	GVL_Safe_IO.nSafetySystem_Status := 22;//Local E-Stop FB Error
+ELSE
+	GVL_Safe_IO.nSafetySystem_Status := 0;//System OK
+END_IF
+//Continue this for all of the function blocks in the safety system
+
+//Contactor
+
+
+//Load Brake
+
+//Motor Brake]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="A4_P2Comparison" Id="{1e8d5f37-b06a-44e2-80f3-12141ad5931a}">
+      <Implementation>
+        <ST><![CDATA[
+//PPRASINOS 6/5/2017//IF GVL_Modes.bP2_Monitor_Enable THEN
+//PPRASINOS 6/5/2017//	IF kidAxis.NcToPlc.ActPos > (kidAxis_P2.NcToPlc.ActPos + GVL_Safe_IO.nP2_EncoderWindow) THEN
+
+	//Run routine, issue fast stop, then set Motion Command to 0, issue error, and remove "PLC_Estop"
+	//possibly add a time delay for triggering the error
+	
+//PPRASINOS 6/5/2017//	ELSIF kidAxis.NcToPlc.ActPos < (kidAxis_P2.NcToPlc.ActPos - GVL_Safe_IO.nP2_EncoderWindow) THEN
+	
+	//Run routine, issue fast stop, then set Motion Command to 0, issue error, and remove "PLC_Estop"
+	
+	
+//PPRASINOS 6/5/2017//	END_IF
+
+	
+//PPRASINOS 6/5/2017//END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P41_SafetyHandling">
+      <LineId Id="197" Count="0" />
+      <LineId Id="199" Count="1" />
+      <LineId Id="202" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="208" Count="0" />
+      <LineId Id="204" Count="0" />
+      <LineId Id="203" Count="0" />
+      <LineId Id="206" Count="0" />
+      <LineId Id="209" Count="0" />
+      <LineId Id="207" Count="0" />
+      <LineId Id="211" Count="1" />
+      <LineId Id="201" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="131" Count="1" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="133" Count="1" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="135" Count="1" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="24" Count="11" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="115" Count="0" />
+      <LineId Id="114" Count="0" />
+      <LineId Id="113" Count="0" />
+      <LineId Id="112" Count="0" />
+      <LineId Id="41" Count="1" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="68" Count="5" />
+      <LineId Id="67" Count="0" />
+    </LineIds>
+    <LineIds Name="P41_SafetyHandling.A1_EStop_LED">
+      <LineId Id="2" Count="15" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P41_SafetyHandling.A2_SafetyReset">
+      <LineId Id="2" Count="27" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="30" Count="32" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="63" Count="26" />
+      <LineId Id="92" Count="15" />
+      <LineId Id="109" Count="2" />
+      <LineId Id="121" Count="1" />
+      <LineId Id="112" Count="7" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P41_SafetyHandling.A3_SafetyStatus">
+      <LineId Id="2" Count="58" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="P41_SafetyHandling.A4_P2Comparison">
+      <LineId Id="2" Count="14" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

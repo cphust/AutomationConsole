@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <GVL Name="GVL_Modes" Id="{2ca24a16-09c5-4969-a94c-0bc8726f7848}">
+    <Declaration><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.03		0.00.01		Added bDisableMotion
+     Brent Miller				2016.05.26		0.00.02		Added bBrake_Test			allows user to test brakes (Motor & Load)		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+VAR_GLOBAL
+	
+//Limit Switch Disable
+	bDisable_Limit_Switch			: BOOL;	//If 'True', ignores limit switch inputs
+	
+//2nd Encoder Comparison test
+	//bDisable_EncoderPosition_Test	: BOOL;	//If 'True', ignores encoder comparison b/w Motor & 2nd encoder
+	nMotion_Command					: INT;	//Motion Command signal from HMI
+	bDrive_Enable					: BOOL;	//Enable Motion from HMI
+	lrDrive_Override				: LREAL; //Limit Motion Speed = 0.0 --> 100.0
+	bStart_Motion					: BOOL;	//Start Loaded Motion Profile	
+	
+//If Drive is 'Slave'	
+	//bGear_Slave_To_Master			: BOOL;	//If 'True', drive is Gearing, 'False', drive is Freerun
+		
+//Local Control Active
+	//bLocal_Control_Active			: BOOL;	//If "True", drive is controlled by local joystick
+	
+//Wireless Control Active
+	//bLocal_Wireless_Active			: BOOL;	//If "True", drive is controlled by Wireless Controller
+	
+//Local Control
+	bLocal_Control					: BOOL;	//If a control is allowed Locally
+	
+//Remote 'MOM' Connected
+	bRemote_Connected				: BOOL;	//If a remote PLC is connected
+
+//Remote Lockout
+	//bRemote_Lockout					: BOOL;	//If a remote 'Slave' or part of 3D group, and not master, don't allow independent control
+	
+//Brake Test
+	//bBrake_Test						: BOOL;	//Enables a brake test to occur
+	
+//Drive Verification
+	//bDrive_Verified					: BOOL;	//Has the drive been Verified
+	//bDrive_Verified_Finished		: BOOL;	//Has the drive Finished Verification
+//	bDrive_Save_CoE_Finished		: BOOL;	//Has the drive Finished Verification
+	
+//Set Home Position
+//	bSetTo_0_Position				: BOOL;	//Motion Command must be set to 0
+//	
+//	bSafety_Enable_Forward			: BOOL;
+//	bSafety_Enable_Reverse			: BOOL;
+//	bDisableMotion					: BOOL;
+	bDrive_Hardware_Enable			: BOOL;
+//	bSetTo_Position					: BOOL;
+//	rSet_Position					: REAL;
+//	bSoft_Limits_Disabled			: BOOL;	//Confirmation of status of NC Soft Limits
+//	bSetPositionBiasInit			: BOOL;
+END_VAR	
+VAR_GLOBAL PERSISTENT
+	
+	//Encoder is an Incremental Type
+	//bEncoder_Type_Incremental		: BOOL;	//If 'True', Motor encoder is incremental
+
+//Brake mode is Hold Control
+	//bBrake_Mode_HoldControl			: BOOL;	//If 'True', opens Motor brake & holds at 0 speed
+	
+//Is this drive 'Master'
+	bDrive_IS_Master				: BOOL;	//If 'True', drive is Master, 'False', drive is a Slave
+	
+//Is Secondary encoder Used?
+	//bP2_Monitor_Enable				: bool;	//If 'True', runs comparison and monitors motor encoder and secondary encoder
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,190 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_IgnoreLimits" Id="{04478185-286d-4d0e-8c70-7bbf34c7987a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_IgnoreLimits
+VAR_INPUT
+	bExecute	: BOOL;
+	bLimit_Use	: BOOL;
+END_VAR
+VAR_OUTPUT
+	
+	bDone 		: BOOL;	//both limits were written and verified
+	bError		: BOOL; //Error writing or limits not verified
+	udnErrorID	: UDINT;	//Error code, to be added to later (writing or reading)
+	bBusy		: BOOL;	//in the process of running the Function Blocks
+
+	
+END_VAR
+VAR
+	fbMC_WriteUPParameter	: MC_WriteParameter;
+	fbMc_WriteDownParameter	: MC_WriteParameter;
+	WriteLimits				: INT;
+	fbMC_ReadUPParameter	: MC_ReadParameter;
+	fbMC_ReadDownParameter	: MC_ReadParameter;
+END_VAR
+VAR_IN_OUT
+	Axis		: Axis_Ref;
+	
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[	
+CASE WriteLimits OF
+	
+	0 :	//wait for the bExecute
+		IF bExecute THEN
+			bError		:= FALSE;
+			udnErrorID	:= 0;
+			bBusy		:= TRUE;
+			WriteLimits := 2;
+			
+		END_IF
+
+	2 :	//setting Function Block to False
+		fbMC_WriteUPParameter(Axis:= Axis ,Execute:= FALSE);
+		WriteLimits := 3;	
+		
+	3 :	//set the Up Limit Switch Enable to "OFF"	
+		
+		fbMC_WriteUPParameter(		//Execute the Write Parameter for NC
+			Axis			:= Axis ,
+			Execute			:= TRUE, 
+			ParameterNumber	:= AxisEnMaxSoftPosLimit, 
+			Value			:= BOOL_TO_LREAL(bLimit_Use), 
+			Done			=> , 
+			Busy			=> , 
+			Error			=> , 
+			ErrorID			=> udnErrorID);
+		
+		IF fbMC_WriteUPParameter.Error THEN
+			
+			WriteLimits := 9999;
+			//Add error handling 
+		ELSE
+			IF fbMC_WriteUPParameter.Done THEN
+				fbMC_WriteUPParameter(Axis:= Axis ,Execute:= FALSE);
+				WriteLimits := 4;
+			END_IF
+		END_IF	
+		
+	4:	//Setting FB to False
+		fbMC_ReadUPParameter(Axis:= Axis ,Enable:= FALSE);
+		WriteLimits := 5;	
+	
+	5:	//Reading last value of UpLimit written in Case 4
+		fbMC_ReadUPParameter(
+			Axis:= Axis, 
+			Enable:= TRUE, 
+			ParameterNumber:= AxisEnMaxSoftPosLimit, 
+			ReadMode:= ReadMode_Once, 
+			Valid=> , 
+			Busy=> , 
+			Error=> , 
+			ErrorID=> , 
+			Value=> );
+
+		IF fbMC_ReadUPParameter.Error THEN
+			WriteLimits := 9999;
+			//Add error handling 
+		ELSE
+			IF NOT fbMC_ReadUPParameter.Busy THEN
+				fbMC_ReadUPParameter(Axis:= Axis ,Enable:= FALSE);
+				WriteLimits := 6;
+			END_IF
+		END_IF		
+			
+	6:	//Comparison of Written Value to Read Value
+	
+		IF fbMC_ReadUPParameter.Value = BOOL_TO_LREAL(bLimit_Use) THEN
+			WriteLimits := 7;
+		ELSE
+			WriteLimits := 9999;
+		END_IF
+		
+	7:	//setting Function Block to False
+		fbMC_WriteDownParameter(Axis:= Axis ,Execute:= FALSE);
+		WriteLimits := 8;	
+		
+	8 :	//write to the down limit	
+		
+		fbMC_WriteDownParameter(		//Execute the Write Parameter for NC
+			Axis			:= Axis ,
+			Execute			:= TRUE, 
+			ParameterNumber	:= AxisEnMinSoftPosLimit, 
+			Value			:= BOOL_TO_LREAL(bLimit_Use), 
+			Done			=> , 
+			Busy			=> , 
+			Error			=> , 
+			ErrorID			=> udnErrorID);
+		
+		IF fbMC_WriteDownParameter.Error THEN
+			
+			WriteLimits := 9999;
+			//Add error handling 
+		ELSE
+			IF fbMC_WriteDownParameter.Done THEN
+				fbMC_WriteDownParameter(Axis:= Axis ,Execute:= FALSE);
+				WriteLimits := 9;
+			END_IF
+		END_IF	
+		
+	9:	//Setting FB to False
+		fbMC_ReadDownParameter(Axis:= Axis ,Enable:= FALSE);
+		WriteLimits := 10;	
+	
+	10:	//Reading last value of UpLimit written in Case 4
+		fbMC_ReadDownParameter(
+			Axis:= Axis, 
+			Enable:= TRUE, 
+			ParameterNumber:= AxisEnMinSoftPosLimit, 
+			ReadMode:= ReadMode_Once, 
+			Valid=> , 
+			Busy=> , 
+			Error=> , 
+			ErrorID=> , 
+			Value=> );
+
+		IF fbMC_ReadDownParameter.Error THEN
+			WriteLimits := 9999;
+			//Add error handling 
+		ELSE
+			IF NOT fbMC_ReadDownParameter.Busy THEN
+				fbMC_ReadDownParameter(Axis:= Axis ,Enable:= FALSE);
+				WriteLimits := 11;
+			END_IF
+		END_IF		
+			
+	11:	//Comparison of Written Value to Read Value
+	
+		IF fbMC_ReadDownParameter.Value = BOOL_TO_LREAL(bLimit_Use) THEN
+			WriteLimits := 10000;
+		ELSE
+			WriteLimits := 9999;
+		END_IF
+		
+	9999:	//Error Handling
+		bError  := TRUE;
+		bBusy	:= FALSE;
+				
+		IF NOT bExecute THEN
+			WriteLimits := 0;
+		END_IF	
+	
+	10000:	//Done writing and verifying limits
+		bBusy	:= FALSE;
+		bDone	:= TRUE;
+		
+		IF NOT bExecute THEN
+			WriteLimits := 0;
+			bDone		:= false;
+		END_IF	
+		
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_IgnoreLimits">
+      <LineId Id="3" Count="150" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

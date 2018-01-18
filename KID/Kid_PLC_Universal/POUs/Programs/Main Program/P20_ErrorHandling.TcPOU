@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="P20_ErrorHandling" Id="{4160e03a-aba1-4f62-8d36-504ed33080ca}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P20_ErrorHandling
+VAR
+	GLOBAL_ERROR_STRING : STRING(200);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+GLOBAL_ERROR_STRING := GVL_PLC.bGlobal_Error_String;
+
+IF kidAxis.Status.Error THEN
+	GVL_PLC.bGlobal_Error := TRUE;
+	
+END_IF
+
+IF GVL_PLC.bGlobal_Reset THEN
+	GLOBAL_ERROR_STRING := '';
+	GVL_PLC.bGlobal_Error := FALSE;
+	IF kidAxis.Status.STATf THEN
+		GVL_Motion.bNC_Reset := TRUE;
+		GVL_DriveParameters.controlWord := 128;
+	END_IF
+
+	GVL_PLC.bGlobal_Reset := FALSE;
+
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="P20_ErrorHandling">
+      <LineId Id="3" Count="19" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

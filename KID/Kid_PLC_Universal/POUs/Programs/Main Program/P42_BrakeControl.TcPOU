@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="P42_BrakeControl" Id="{a10ecb5a-62f5-43ed-818f-4cf8d35aaccc}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P42_BrakeControl
+VAR
+	fbTOF_MotorBrake: TOF;
+	OnHome : BOOL;
+	HomeSwitchPositionON : DINT;
+	enablecounter : DINT;
+	HomeSwitchPositionOff : DINT;
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.05		0.00.01		Added Brake Logic for Load Brake
+	 Brent Miller				2016.05.25		  0.00.02		Changed Motor Brake Logic to include a wait command before disabling motor			
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+
+
+//Brake Logic for Motor brake	
+
+// To DO:  	For Motor brake logic, brake should release once the drive has enabled and is energized
+//			Brake should engage when Deadman button is released, wait 0.5 sec then disable the motor
+
+		
+		IF  GVL_Modes.bDrive_Enable AND kidaxis.Status.STATso AND kidaxis.status.ready THEN
+				GVL_DriveParameters.controlWord := 15;
+				GVL_Safe_IO.bRelease_Load_Brake := TRUE;
+				IF  GVL_Hardware_IO.bLoad_Brake_Feedback THEN
+					EnableCounter := ENableCounter + 1;
+				END_IF
+				IF EnableCounter > 20 THEN 
+					GVL_Safe_IO.bRelease_Motor_Brake := TRUE;
+			 		EnableCounter := 20; 
+				END_IF
+		ELSE
+				IF EnableCounter > 0 THEN enablecounter :=0; END_IF
+				GVL_Safe_IO.bRelease_Motor_Brake := FALSE;
+				enablecounter := enablecounter -1;
+				IF enablecounter < -50 THEN  
+					enablecounter := -50; 
+					IF  kidaxis.Status.STATso THEN GVL_DriveParameters.controlWord := 7; END_IF
+				END_IF
+		END_IF
+		
+
+IF NOT GVL_Safe_IO.bContactor  THEN GVL_Safe_IO.bRelease_Load_Brake := FALSE; GVL_Safe_IO.bRelease_Motor_Brake := FALSE; END_IF
+
+
+//Brake Logic for Load Brake
+//IF NOT GVL_PLC.bGlobal_Error THEN
+//	GVL_Safe_IO.bRelease_Load_Brake := TRUE;
+//ELSE
+//	GVL_Safe_IO.bRelease_Load_Brake := FALSE;
+//END_IF
+
+IF GVL_Safe_IO.bCross_Groove AND NOT OnHome THEN
+	HomeSwitchPositionON := KidAxis.actualPos;
+	OnHome := TRUE;
+ELSIF NOT GVL_SAFE_IO.bCross_Groove AND ONHOME THEN
+	HomeSwitchPositionOFF := KidAxis.actualPos;
+	OnHome := FALSE;
+END_IF
+kidAxis.CheckIn.Home_Tripped := OnHome;
+]]></ST>
+    </Implementation>
+    <Action Name="A1_BrakeTest" Id="{294c3341-0a5c-4117-bed7-3ab823497808}">
+      <Implementation>
+        <ST><![CDATA[(*
+	This program will allow the technician to test the functionality of each of the brakes.
+	When in "Test" mode, both brakes will engage (not-energized) regardless of system status
+	- operator will then be allowed to manually release one brake at a time (momentary release). This allows the operator to check functionality & load holding ability
+	- 
+
+*)]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P42_BrakeControl">
+      <LineId Id="3" Count="2" />
+      <LineId Id="7" Count="11" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="20" Count="5" />
+      <LineId Id="120" Count="0" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="183" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="179" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="169" Count="2" />
+      <LineId Id="168" Count="0" />
+      <LineId Id="130" Count="1" />
+      <LineId Id="165" Count="2" />
+      <LineId Id="184" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="185" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="42" Count="6" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="75" Count="1" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="69" Count="0" />
+    </LineIds>
+    <LineIds Name="P42_BrakeControl.A1_BrakeTest">
+      <LineId Id="2" Count="5" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

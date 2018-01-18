@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="FB_CheckIn_EtherCAT" Id="{ce55fe03-2fdc-4f92-8308-554970087ab9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CheckIn_EtherCAT
+VAR_INPUT
+		QuickPressTimer : INT;
+		QuickPressCounter : INT;
+		VoltageEnabledCounter : DINT;
+		KidID : INT;
+		Home_Tripped : BOOL;
+			momControl: BOOL; //flag used to indicate if targets are taken from mom or Joystick
+
+END_VAR
+VAR_OUTPUT
+	JoyStickMode : BOOL;
+
+	MomEstopActivated : BOOL;
+	Rmt_DeadManPressed : BOOL;
+	Rmt_CollisionDetect : BOOL;
+	Unknown: BOOL;
+	heartBeat : BOOL;
+	ComError_Reset : BOOL; //Used both to indicate a Comm_Error(FromKid) and reset a Comm_Error(ToKid)
+	Mom_System_Estop: BOOL;
+	ResetSaftey : BOOL;
+	SafteyTripped : BOOL;
+	Hard_Limit_Tripped : BOOL;
+	SetSoftUp : BOOL;
+	SetSoftDown : BOOL;
+END_VAR
+VAR
+	checkingInt : UDINT;
+	checkint1 : DINT;
+	//Heartbeat for timeout and COMS over EtherCAT
+	MomComTimer : TON; //Starts timer if a cycle heartbeat is missed. 100MS = COMLOSS
+	MomCom_ET : TIME; //Elapsed Time since last update
+	HomeOperation_Active : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF GVL_Hardware_IO.bLocal_Deadman_State THEN 
+	QuickPressTimer := QuickPressTimer + 1;
+	IF QuickPressTimer > 50 THEN QUickpressCounter := 0; quickpressTimer :=50; END_IF
+	ELSIF QuickPressTimer < 50 AND quickpressTimer > 0 THEN
+		QuickPressCounter := QuickpressCounter + 1;
+		IF QuickPressCounter > 10 THEN 
+			GVL_Safe_IO.bSafetySystem_Reset := TRUE; 
+			gvl_hmi.momcontrol_bypass := QuickPressCounter < 15 ;
+			 
+		END_IF
+		quickpressTimer := 0;
+		ELSE
+			
+		quickpresstimer:=0;
+END_IF
+
+IF GVL_HMI.MomControl_Bypass THEN 
+	IF MomControl THEN GVL_Safe_IO.bSafetySystem_Reset := TRUE; END_IF
+	 MomEstopActivated := FALSE; 
+	 momControl := FALSE;
+	 KidAxis.UpdateWord_toMom := (KidID * 2048) + (BOOL_TO_UINT(momControl)* 128);
+	RETURN; 
+END_IF
+
+checkingInt := KidAxis.UpdateWord_FromMom;
+ 	
+	IF CheckIngInt/134217728 > 0 THEN KidID := UDINT_TO_INT(CheckingInt / 134217728); checkingInt := CheckingInt MOD 134217728; END_IF
+	checkingInt := CheckingInt MOD 4096; 
+	IF CheckingInt/512 > 0 AND NOT HomeOperation_Active AND NOT (checkingInt MOD 16)/8 >0 THEN
+		GVL_Safe_IO.bHard_Up_Bypass_Enable := TRUE;
+		GVL_Safe_IO.bHard_Down_Bypass_Enable := TRUE;
+	ELSIF CheckingInt/512 = 0 AND HomeOperation_Active AND NOT (checkingInt MOD 16)/8 >0 THEN
+		GVL_Safe_IO.bHard_Up_Bypass_Enable := FALSE;
+		GVL_Safe_IO.bHard_Down_Bypass_Enable := FALSE;
+		GVL_Index.Home_Offset := Kidaxis.actualPos + GVL_Index.Home_Switch_Offset;
+		GVL_Index.Home_Offset_UU := GVL_Index.Home_Offset / LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum);
+
+		//IF GVL_Index.Home_Offset < GVL_Index.Admin_Min THEN GVL_Index.Admin_Min := GVL_Index.Home_Offset ; END_IF
+	END_IF
+	//IF KidID = 0 THEN RETURN; END_IF
+	KidAxis.byPassSoftDown := CheckingInt/16384 >0; checkingInt := checkingInt MOD 1024;
+	KidAxis.byPassSoftUp := CheckingInt/8192 >0; checkingInt := checkingInt MOD 1024;
+	KidAxis.byPassHardDown := CheckingInt/4096 >0; checkingInt := checkingInt MOD 1024;
+	KidAxis.byPassHardUp := CheckingInt/2048 >0; checkingInt := checkingInt MOD 1024;
+	KidAxis.byPassUltimate := CheckingInt/1024 >0; checkingInt := checkingInt MOD 1024;
+	HomeOperation_Active := CheckingInt/512 > 0; checkingInt := checkingInt MOD 512;
+	Rmt_CollisionDetect :=CheckingInt/256 > 0; checkingInt := CheckingInt MOD 256;
+	momControl:= checkingInt / 128 > 0 ;	checkingInt := checkingInt MOD 128;
+	Rmt_DeadManPressed:= checkingInt / 64 > 0;	checkingInt := checkingInt MOD 64;
+	ResetSaftey := checkingInt / 32 > 0;	checkingInt := checkingInt MOD 32;
+	ComError_Reset:= checkingInt / 16 > 0;	checkingInt := checkingInt MOD 16;
+	MomEstopActivated:= checkingInt / 8 > 0;	checkingInt := checkingInt MOD 8;
+	JoyStickMode:= checkingInt / 4 > 0;	checkingInt := checkingInt MOD 4;
+	KidAxis.LeaveEnabled:= checkingInt / 2 > 0;   checkingInt := checkingInt MOD 2;
+	HeartBeat :=CheckingInt>0;
+
+IF ComError_Reset OR ResetSaftey THEN
+	GVL_PLC.bGLOBAL_ERROR_STRING := replace(GVL_PLC.bGlobal_Error_String, '', len('Comm Lost on EtherCat Network'), FIND(GVL_PLC.bGLOBAL_ERROR_STRING, 'Comm Lost on EtherCat Network'));
+	MomComTimer.IN := FALSE;
+GVL_PLC.bComTimeOutError := FALSE;
+	MomComTimer.PT := T#2S;
+	
+END_IF
+
+		
+IF  NOT GVL_PLC.bComTimeOutError OR ComError_Reset THEN
+MomComTimer(IN:=HeartBeat, PT:=T#150MS , Q=>GVL_PLC.bComTimeOutError, ET=> MomCom_ET ); //Starts timer if a cycle heartbeat is missed. 100MS = COMLOSS
+ELSE
+	
+	IF FIND(GVL_PLC.bGLOBAL_ERROR_STRING, 'Comm Lost on EtherCat Network')=0 THEN
+		GVL_PLC.bGLOBAL_ERROR_STRING := CONCAT(GVL_PLC.bGlobal_Error_String, 'Comm Lost on EtherCat Network');
+	END_IF
+	
+END_IF
+
+IF ResetSaftey THEN
+	GVL_Safe_IO.bSafetySystem_Reset := TRUE;
+	MomEstopActivated := FALSE;
+	VoltageEnabledCounter := 100;
+END_IF
+		IF NOT KidAxis.Status.STATve AND NOT ResetSaftey THEN 
+			IF VoltageENabledCounter > -100 THEN VoltageENabledCounter := VoltageEnabledCounter - 1; END_IF
+		ELSIF KidAxis.Status.STATve THEN
+			IF VoltageENabledCounter < 100 THEN VoltageENabledCounter := VoltageEnabledCounter + 1; END_IF
+		END_IF
+		
+SafteyTripped := NOT bPlcEstopSignal OR  Kidaxis.Status.statf OR GVL_PLC.bComTimeOutError OR NOT GVL_Safe_IO.bContactor OR VoltageEnabledCounter < -15; 
+Hard_Limit_Tripped := NOT bLimit_Hard_Up OR NOT bLimit_Hard_Down;
+KidAxis.UpdateWord_toMom := INT_TO_UDINT(KidID) * 134217728 +
+
+BOOL_TO_UDINT(KIDAXIS.modeTargetPos < gvl_iNDEX.Admin_MIN) * 16384 +
+BOOL_TO_UDINT(KIDAXIS.modeTargetPos > gvl_iNDEX.Admin_Max) * 8192 +
+BOOL_TO_UDINT(gvl_sAFE_io.bLimit_Hard_Down) * 4096 +
+BOOL_TO_UDINT(gvl_sAFE_io.bLimit_Hard_uP) * 2048 +
+BOOL_TO_UDINT(gvl_sAFE_io.bLimiT_uLTIMATE) * 1024 +
+										BOOL_TO_UDINT(NOT GVL_Safe_IO.bES_Local_Status) * 512 +
+										BOOL_TO_UDINT(momControl) * 128 +
+										BOOL_TO_UDINT(GVL_Safe_IO.bSlack_Line) * 64 +
+										BOOL_TO_UDINT(Kidaxis.Status.voltageEnabled) * 32 +
+										BOOL_TO_UDINT(GVL_PLC.bComTimeOutError) * 16 +
+										BOOL_TO_UDINT(SafteyTripped) * 8 +
+										BOOL_TO_UDINT(Hard_Limit_Tripped) * 4 +
+										BOOL_TO_UDINT(kidAxis.LeaveEnabled) * 2 +
+										BOOL_TO_UDINT(NOT HeartBeat);
+						
+			momControl := momControl AND NOT GVL_PLC.bComTimeOutError ;					
+IF (momControl OR ResetSaftey) AND NOT ((MomEstopActivated AND momControl) OR (GVL_PLC.bComTimeOutError AND momControl)) THEN 
+	
+		GVL_Modes.nMotion_Command := 10;
+
+ELSE
+	GVL_Modes.nMotion_Command := 2;
+END_IF
+
+ResetSaftey := ResetSaftey AND SafteyTripped;
+
+checkint1:= checkint1 + 1;
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CheckIn_EtherCAT">
+      <LineId Id="583" Count="0" />
+      <LineId Id="568" Count="0" />
+      <LineId Id="574" Count="0" />
+      <LineId Id="571" Count="1" />
+      <LineId Id="575" Count="0" />
+      <LineId Id="669" Count="3" />
+      <LineId Id="573" Count="0" />
+      <LineId Id="576" Count="2" />
+      <LineId Id="569" Count="1" />
+      <LineId Id="4" Count="0" />
+      <LineId Id="564" Count="0" />
+      <LineId Id="527" Count="0" />
+      <LineId Id="530" Count="1" />
+      <LineId Id="528" Count="1" />
+      <LineId Id="5" Count="3" />
+      <LineId Id="221" Count="2" />
+      <LineId Id="225" Count="4" />
+      <LineId Id="353" Count="0" />
+      <LineId Id="232" Count="1" />
+      <LineId Id="361" Count="0" />
+      <LineId Id="427" Count="0" />
+      <LineId Id="633" Count="0" />
+      <LineId Id="629" Count="2" />
+      <LineId Id="628" Count="0" />
+      <LineId Id="219" Count="0" />
+      <LineId Id="9" Count="12" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="158" Count="1" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="263" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="293" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="294" Count="0" />
+      <LineId Id="27" Count="4" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="153" Count="0" />
+      <LineId Id="707" Count="0" />
+      <LineId Id="719" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="709" Count="0" />
+      <LineId Id="711" Count="0" />
+      <LineId Id="714" Count="0" />
+      <LineId Id="713" Count="0" />
+      <LineId Id="710" Count="0" />
+      <LineId Id="156" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="622" Count="5" />
+      <LineId Id="458" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="34" Count="5" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="491" Count="0" />
+      <LineId Id="61" Count="2" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="186" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="189" Count="0" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="220" Count="0" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="65" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

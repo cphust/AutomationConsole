@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="JoyStickMotion" Id="{bd639b83-f19e-4e31-9c7b-0f15f5527c65}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM JoyStickMotion
+VAR
+//1/17/2013 10:28AM
+	loopCount : DINT;
+
+	DeadManOut 	: BOOL := FALSE;
+	JoyStickData AT %Q*: UDINT;
+;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+	loopCount := loopCount +1;
+IF GVL_IO.nAnalog_Input_Raw < GVL_IO.vMinValueCalib THEN vMinValueCalib := DINT_TO_LREAL(GVL_IO.nAnalog_Input_Raw + 1); END_IF
+IF GVL_IO.nAnalog_Input_Raw > GVL_IO.vMaxValueCalib THEN vMaxValueCalib := DINT_TO_LREAL(GVL_IO.nAnalog_Input_Raw - 1); END_IF
+IF loopCount MOD 1000 = 5 AND NOT GVL_Hardware_IO.bLocal_Deadman_State AND vTrim + GVL_IO.nAnalog_Input_Raw > 0 THEN vTrim := vTrim - 1; END_IF
+IF loopCount MOD 1000 = 5 AND NOT GVL_Hardware_IO.bLocal_Deadman_State AND vTrim + GVL_IO.nAnalog_Input_Raw < 0 THEN vTrim := vTrim + 1; END_IF
+IF GVL_IO.vTrim > 500 THEN GVL_IO.vTrim := 500; END_IF
+IF GVL_IO.vTrim < -500 THEN GVL_IO.vTrim := -500; END_IF
+
+	
+IF GVL_IO.vTrim + GVL_IO.nAnalog_Input_Raw > 50 AND (DeadManOut OR KidAxis.checkIn.momControl) THEN
+	GVL_IO.rJoystick_Feedback :=100 * EXPT((INT_TO_REAL(GVL_IO.nAnalog_Input_Raw + vTrim))/ vMaxValueCalib, 2);
+ELSIF GVL_IO.vTrim + GVL_IO.nAnalog_Input_Raw < - 50 AND  (DeadManOut OR KidAxis.checkIn.momControl)  THEN
+	GVL_IO.rJoystick_Feedback := -100 *EXPT((INT_TO_REAL(GVL_IO.nAnalog_Input_Raw + vTrim))/ vMinValueCalib, 2);
+ELSIF  GVL_Hardware_IO.bLocal_Deadman_State AND ABS(vTrim + GVL_IO.nAnalog_Input_Raw)<50 THEN
+	DeadManOut:= TRUE;
+	GVL_IO.rJoystick_Feedback := 0;
+ELSE
+	DeadManOut:= FALSE;
+END_IF
+
+
+JoyStickData := REAL_TO_UDINT((GVL_IO.rJoystick_Feedback + 100)*100) + (32768 * BOOL_TO_DINT(GVL_Hardware_IO.bLocal_Deadman_State)) + 65536 * BOOL_TO_DINT(GVL_Hardware_IO.bLocal_Keyswitch_Return);
+
+IF NOT GVL_HMI.MomControl_Bypass AND kidAxis.CheckIn.momControl THEN
+		DeadManOut:= FALSE;
+	 RETURN; 
+END_IF
+
+//Motion Allowed
+GVL_Modes.bStart_Motion := TRUE;
+
+
+	
+	//GVL_DriveParameters.controlWord := 15;
+
+
+
+
+
+//Use the set Velocity for the hoist
+
+	GVL_Motion.rHoist_SelectedVelocity := GVL_Motion.rHoist_MaxVelocity;
+
+
+GVL_Motion.rHoist_SelectedVelocity := GVL_Motion.rHoist_MaxVelocity * GVL_IO.rJoystick_Feedback/100;
+//TESTING FOR SLOWDOWN & JOG FUNCTIONING
+
+
+//Run the Jog Function Block	
+
+IF GVL_IO.rJoystick_Feedback > 0.5 THEN
+//kidAxis.modeTargetPos:=     f_LimitTarget(kidAxis.actualPos + LREAL_TO_DINT(((GVL_Motion.rHoist_SelectedVelocity  * ( ABS(GVL_Motion.rHoist_SelectedVelocity)/ kidAxis.modeAcc))))); 
+	KidAxis.modeTargetPos := GVL_index.Admin_Max;
+	//kidAxis.modeVel:= REAL_TO_DINT(ABS(GVL_Motion.rHoist_SelectedVelocity / 10));
+ELSIF GVL_IO.rJoystick_Feedback < -0.5 THEN
+	kidaxis.modeTargetPos := GVL_Index.Admin_Min;
+	//kidAxis.modeVel:= REAL_TO_DINT(ABS(GVL_Motion.rHoist_SelectedVelocity / 10));
+ELSE
+	kidAxis.modeTargetPos:= LREAL_TO_DINT(kidAxis.actualpos);
+	//kidAxis.modeVel:=0;
+END_IF
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="JoyStickMotion">
+      <LineId Id="485" Count="8" />
+      <LineId Id="597" Count="0" />
+      <LineId Id="587" Count="0" />
+      <LineId Id="498" Count="9" />
+      <LineId Id="581" Count="0" />
+      <LineId Id="567" Count="1" />
+      <LineId Id="508" Count="1" />
+      <LineId Id="580" Count="0" />
+      <LineId Id="578" Count="1" />
+      <LineId Id="510" Count="6" />
+      <LineId Id="518" Count="2" />
+      <LineId Id="532" Count="23" />
+      <LineId Id="566" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

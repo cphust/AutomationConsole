@@ -1,0 +1,1207 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4022.4">
+	<DataTypes>
+		<DataType>
+			<Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
+			<BitSize>48</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000001}">BYTE</BaseType>
+			<ArrayInfo>
+				<LBound>0</LBound>
+				<Elements>6</Elements>
+			</ArrayInfo>
+			<Format>
+				<Printf>%d.%d.%d.%d.%d.%d</Printf>
+				<Parameter>[0]</Parameter>
+				<Parameter>[1]</Parameter>
+				<Parameter>[2]</Parameter>
+				<Parameter>[3]</Parameter>
+				<Parameter>[4]</Parameter>
+				<Parameter>[5]</Parameter>
+			</Format>
+		</DataType>
+		<DataType>
+			<Name GUID="{18071995-0000-0000-0000-000000000042}" TcBaseType="true" CName="AmsAddr">AMSADDR</Name>
+			<BitSize>64</BitSize>
+			<SubItem>
+				<Name>netId</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000041}">AMSNETID</Type>
+				<BitSize>48</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>port</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000004}">WORD</Type>
+				<BitSize>16</BitSize>
+				<BitOffs>48</BitOffs>
+			</SubItem>
+			<Format>
+				<Printf>%d.%d.%d.%d.%d.%d:%d</Printf>
+				<Parameter>.netId[0]</Parameter>
+				<Parameter>.netId[1]</Parameter>
+				<Parameter>.netId[2]</Parameter>
+				<Parameter>.netId[3]</Parameter>
+				<Parameter>.netId[4]</Parameter>
+				<Parameter>.netId[5]</Parameter>
+				<Parameter>.port</Parameter>
+			</Format>
+			<Format Name="Iec">
+				<Printf>(netId:=[%d.%d.%d.%d.%d.%d], port :=%d)</Printf>
+				<Parameter>.netId[0]</Parameter>
+				<Parameter>.netId[1]</Parameter>
+				<Parameter>.netId[2]</Parameter>
+				<Parameter>.netId[3]</Parameter>
+				<Parameter>.netId[4]</Parameter>
+				<Parameter>.netId[5]</Parameter>
+				<Parameter>.port</Parameter>
+			</Format>
+		</DataType>
+		<DataType>
+			<Name GUID="{247DB1D9-4879-4583-8E94-DEA19F7F3F7A}" Namespace="Tc2_SerialCom" AutoDeleteType="true">EL6inData22B</Name>
+			<Comment>
+				<![CDATA[ This data type is corresponding to the
+   KL-6xxx data structure used in the
+   TwinCAT SystemManager
+   (KL-6xxx version using 5 data bytes / 
+    non-alternative (standard) output ) 
+]]>
+			</Comment>
+			<BitSize>192</BitSize>
+			<SubItem>
+				<Name>Status</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000004}">WORD</Type>
+				<BitSize>16</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>D</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000001}">BYTE</Type>
+				<ArrayInfo>
+					<LBound>0</LBound>
+					<Elements>22</Elements>
+				</ArrayInfo>
+				<BitSize>176</BitSize>
+				<BitOffs>16</BitOffs>
+			</SubItem>
+		</DataType>
+		<DataType>
+			<Name GUID="{A1C4EF65-3E00-41FF-A899-45CAC87D17D7}" Namespace="Tc2_SerialCom" AutoDeleteType="true">EL6outData22B</Name>
+			<Comment>
+				<![CDATA[ This data type is corresponding to the
+   KL-6xxx data structure used in the
+   TwinCAT SystemManager
+   (KL-6xxx version using 5 data bytes / 
+    non-alternative (standard) output ) 
+]]>
+			</Comment>
+			<BitSize>192</BitSize>
+			<SubItem>
+				<Name>Ctrl</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000004}">WORD</Type>
+				<BitSize>16</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>D</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000001}">BYTE</Type>
+				<ArrayInfo>
+					<LBound>0</LBound>
+					<Elements>22</Elements>
+				</ArrayInfo>
+				<BitSize>176</BitSize>
+				<BitOffs>16</BitOffs>
+			</SubItem>
+		</DataType>
+		<DataType>
+			<Name GUID="{18071995-0000-0000-0000-002000000008}" IecBaseType="true" AutoDeleteType="true" HideSubItems="true">ARRAY [0..0] OF BYTE</Name>
+			<BitSize>8</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000001}">BYTE</BaseType>
+			<ArrayInfo>
+				<LBound>0</LBound>
+				<Elements>1</Elements>
+			</ArrayInfo>
+		</DataType>
+		<DataType>
+			<Name GUID="{18071995-0000-0000-0000-002000000006}" IecBaseType="true" BitType="true" AutoDeleteType="true" HideSubItems="true">ARRAY [0..5] OF BIT</Name>
+			<BitSize>6</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000010}">BIT</BaseType>
+			<ArrayInfo>
+				<LBound>0</LBound>
+				<Elements>6</Elements>
+			</ArrayInfo>
+		</DataType>
+		<DataType>
+			<Name GUID="{18071995-0000-0000-0000-002000000020}" IecBaseType="true" AutoDeleteType="true" HideSubItems="true">ARRAY [0..3] OF BYTE</Name>
+			<BitSize>32</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000001}">BYTE</BaseType>
+			<ArrayInfo>
+				<LBound>0</LBound>
+				<Elements>4</Elements>
+			</ArrayInfo>
+		</DataType>
+		<DataType>
+			<Name GUID="{85DC3E7A-8ADA-435B-9479-25573909A7DB}" Namespace="AX5000" TcBaseType="true">E_AX5000_P_0275_ActiveFeedbackAndMemory</Name>
+			<BitSize>8</BitSize>
+			<BaseType GUID="{18071995-0000-0000-0000-000000000001}">BYTE</BaseType>
+			<EnumInfo>
+				<Text>
+					<![CDATA[EAX5000_P_0275_MEMORY_NONE]]>
+				</Text>
+				<Enum>0</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text>
+					<![CDATA[EAX5000_P_0275_FEEDBACK1_MEMORY_ENCODER]]>
+				</Text>
+				<Enum>1</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text>
+					<![CDATA[EAX5000_P_0275_FEEDBACK1_MEMORY_DRIVE]]>
+				</Text>
+				<Enum>2</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text>
+					<![CDATA[EAX5000_P_0275_FEEDBACK2_MEMORY_ENCODER]]>
+				</Text>
+				<Enum>8</Enum>
+			</EnumInfo>
+			<EnumInfo>
+				<Text>
+					<![CDATA[EAX5000_P_0275_FEEDBACK2_MEMORY_DRIVE]]>
+				</Text>
+				<Enum>16</Enum>
+			</EnumInfo>
+			<Hides>
+				<Hide GUID="{F1A82E04-2D76-4E5D-BB15-437337214D25}"/>
+			</Hides>
+		</DataType>
+		<DataType>
+			<Name GUID="{D7D16A25-71D5-48E0-882D-56AB4D826BC2}" Namespace="AX5000" PersistentType="true">ST_AX5000_P_0275</Name>
+			<BitSize>16</BitSize>
+			<SubItem>
+				<Name>ActiveFeedbackAndMemory</Name>
+				<Type GUID="{85DC3E7A-8ADA-435B-9479-25573909A7DB}" Namespace="AX5000">E_AX5000_P_0275_ActiveFeedbackAndMemory</Type>
+				<BitSize>8</BitSize>
+				<BitOffs>0</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>InitializationErrorBehavior</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000010}">BIT</Type>
+				<BitSize>1</BitSize>
+				<BitOffs>8</BitOffs>
+			</SubItem>
+			<Hides>
+				<Hide GUID="{0D1A14D3-018F-4F48-88A7-90B490A317B5}"/>
+				<Hide GUID="{43B3CFF1-FA94-4CC1-8B03-C73EF940373B}"/>
+				<Hide GUID="{81B09CD0-943C-4070-AA5B-0A6818251CEB}"/>
+				<Hide GUID="{B6598B95-DC2C-454C-9B12-DE628B32D897}"/>
+			</Hides>
+		</DataType>
+	</DataTypes>
+	<ImageDatas>
+		<ImageData Id="1000">424dd6020000000000003600000028000000100000000e00000001001800000000000000000074120000741200000000000000000000dcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040dcdcdc404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040dcdcdc404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040dcdcdc404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040dcdcdc404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040dcdcdc404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040808080404040404040dcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040808080404040404040dcdcdc21ff00dcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc808080808080808080808080808080dcdcdc21ff00dcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040808080404040404040dcdcdc21ff00dcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdc404040404040808080404040404040dcdcdc21ff00dcdcdc0000ffdcdcdcffffffffffffffffffffffffffffffdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdc0000ffdcdcdcffffffffffffffffffffffffffffff</ImageData>
+	</ImageDatas>
+	<Project ProjectGUID="{D8B6C452-6D22-4F1F-9A88-DE65C1D45259}" TargetNetId="10.99.1.1.1.1" Target64Bit="true" RelativeTargetNetId="true" RelativeIpAddresses="true" ShowHideConfigurations="#x7">
+		<System>
+			<Settings MaxCpus="4">
+				<Cpu CpuId="3"/>
+				<IoIdleTask Priority="8"/>
+			</Settings>
+			<Tasks>
+				<Task Id="3" CreateSymbols="true" Priority="2" CycleTime="30000" AmsPort="350">
+					<Name>PlcTask</Name>
+				</Task>
+				<Task Id="4" Priority="6" CycleTime="30000" AmsPort="351" AdtTasks="true">
+					<Name>ParameterWriter</Name>
+				</Task>
+				<Task Id="5" Priority="4" CycleTime="40000" AmsPort="352" AdtTasks="true">
+					<Name>FastTask</Name>
+				</Task>
+			</Tasks>
+			<Routes>
+				<Route Name="2275871-001" Addr="2275871-001" NetId="10.4.1.5.1.1" TransType="1"/>
+				<Route Name="RENTAL_3" Addr="10.2.1.3" NetId="10.2.1.3.1.1" TransType="1"/>
+			</Routes>
+		</System>
+		<Plc>
+			<Project GUID="{82C62B92-C6C6-4332-99E0-832D1447657E}" Name="MomTest" PrjFilePath="MomTest\MomTest.plcproj" TmcFilePath="MomTest\MomTest.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" ClearInvalidPersist="true">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" CopyTmiToTarget="true" KeepUnrestoredLinks="2" TmcPath="MomTest\MomTest.tmc">
+					<Name>MomTest Instance</Name>
+					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+					<Vars VarGrpType="1">
+						<Name>PlcTask Inputs</Name>
+						<Var>
+							<Name>MAIN.JoyStickData</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].UpdateWord_toMom</Name>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].HomedPosition_toMom</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].IsUltimateLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].IsHardUpLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].IsHardDownLimitReached</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].MotionControllerErrorCode</Name>
+							<Type>UINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].Load</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].Speed</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].KidEstopCode</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].Address</Name>
+							<Type GUID="{18071995-0000-0000-0000-000000000042}">AMSADDR</Type>
+						</Var>
+						<Var>
+							<Name>GVL_HMI.Mom_Estop_Signal</Name>
+							<Type>BOOL</Type>
+						</Var>
+						<Var>
+							<Name>GVL_HMI.Kiosk_Estop_Signal</Name>
+							<Type>BOOL</Type>
+						</Var>
+					</Vars>
+					<Vars VarGrpType="2">
+						<Name>PlcTask Outputs</Name>
+						<Var>
+							<Name>MAIN.Kid[1].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[1].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[2].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[3].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[4].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[5].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].UpdateWord_FromMom</Name>
+							<Comment>
+								<![CDATA[UpdateWord sends boolean information every cycle for quick inputs like deadman and Estop]]>
+							</Comment>
+							<Type>UDINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].targetpos_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].modeVel_FromMom_Raw</Name>
+							<Comment>
+								<![CDATA[FROM MOM]]>
+							</Comment>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].modeAccel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].modeDecel_FromMom_Raw</Name>
+							<Type>DINT</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Kid[6].IsUltimateLimitBypassed</Name>
+							<Type>BYTE</Type>
+						</Var>
+						<Var>
+							<Name>GVL_HMI.KioskScreenPower</Name>
+							<Type>BOOL</Type>
+						</Var>
+					</Vars>
+					<Vars VarGrpType="1">
+						<Name>ParameterWriter Inputs</Name>
+						<Var>
+							<Name>MAIN.Serial1.stIn_EL6002B</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{247DB1D9-4879-4583-8E94-DEA19F7F3F7A}" Namespace="Tc2_SerialCom">EL6inData22B</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Serial2.stIn_EL6002</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{247DB1D9-4879-4583-8E94-DEA19F7F3F7A}" Namespace="Tc2_SerialCom">EL6inData22B</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Serial2.stIn_EL6002B</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{247DB1D9-4879-4583-8E94-DEA19F7F3F7A}" Namespace="Tc2_SerialCom">EL6inData22B</Type>
+						</Var>
+					</Vars>
+					<Vars VarGrpType="2">
+						<Name>ParameterWriter Outputs</Name>
+						<Var>
+							<Name>MAIN.Serial1.stOut_EL6002B</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{A1C4EF65-3E00-41FF-A899-45CAC87D17D7}" Namespace="Tc2_SerialCom">EL6outData22B</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Serial2.stOut_EL6002</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{A1C4EF65-3E00-41FF-A899-45CAC87D17D7}" Namespace="Tc2_SerialCom">EL6outData22B</Type>
+						</Var>
+						<Var>
+							<Name>MAIN.Serial2.stOut_EL6002B</Name>
+							<Comment>
+								<![CDATA[ linked to the EL6001 in the TwinCAT System Manager ]]>
+							</Comment>
+							<Type GUID="{A1C4EF65-3E00-41FF-A899-45CAC87D17D7}" Namespace="Tc2_SerialCom">EL6outData22B</Type>
+						</Var>
+						<Var>
+							<Name>GVL_HMI.EstopLight</Name>
+							<Comment>
+								<![CDATA[Patient1 : Patient;
+Patient2 : Patient;
+Patient3 : Patient;
+Patient4 : Patient;]]>
+							</Comment>
+							<Type>BOOL</Type>
+						</Var>
+					</Vars>
+					<TaskPouOids>
+						<TaskPouOid Prio="2" OTCID="#x08502001"/>
+						<TaskPouOid Prio="4" OTCID="#x08502002"/>
+						<TaskPouOid Prio="6" OTCID="#x08502003"/>
+					</TaskPouOids>
+				</Instance>
+			</Project>
+		</Plc>
+		<Io>
+			<Device DevType="111" DevFlags="#x0003" AmsPort="28675" AmsNetId="10.99.1.69.4.1" RemoteName="Device 3 (EtherCAT)" Id="3">
+				<Name>Device 3 (EtherCAT)</Name>
+				<AddressInfo>
+					<Pnp>
+						<DeviceDesc>EtherCAT 1 (TwinCAT-Intel PCI Ethernet Adapter (Gig</DeviceDesc>
+						<DeviceName>\DEVICE\{B96D4C15-9230-42FD-A01B-2B12CCA0CFB2}</DeviceName>
+						<DeviceData>90e2ba441d00</DeviceData>
+					</Pnp>
+				</AddressInfo>
+				<Image Id="1" AddrType="9" ImageType="3">
+					<Name>Image</Name>
+				</Image>
+				<Box BoxType="9099" Id="7">
+					<Name>Box 1 (CX9020 EtherCAT slave)</Name>
+					<ImageId>1000</ImageId>
+					<EtherCAT SlaveType="3" AdsServerAddress="000000000402e903" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x00ffffff">
+						<SyncMan>001000022600010001000000400000040002001026010000</SyncMan>
+						<SyncMan>001200022200010002000000400000040002001222010000</SyncMan>
+						<SyncMan>001a19006400010003000000000000000000001a64000000</SyncMan>
+						<SyncMan>001427002000010004000000000000000000001420000000</SyncMan>
+						<Fmmu>0000000000000000001a00020100000001000000000000000000000000000000</Fmmu>
+						<Fmmu>0000000000000000001400010100000002000000000000000000000000000000</Fmmu>
+						<Fmmu>00000000000000000d0800010100000003000000000000000000000000000000</Fmmu>
+						<SwitchPortData>00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</SwitchPortData>
+						<DcMode>4672656552756e0000000000000000004672656552756e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<DcMode>4443000000000000000000000000000044432d53796e6368726f6e000000000000000000000000000000000000000000000000000000000000000000000020030100000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<Pdo Name="IO Inputs" Index="#x1a00" Flags="#x0021" SyncMan="3">
+							<Entry Name="Pdo Entry 1" Index="#x6000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x6000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 3" Index="#x6000" Sub="#x03">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x6000" Sub="#x04">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x6000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x6000" Sub="#x06">
+								<Type>UINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x6000" Sub="#x07">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 8" Index="#x6000" Sub="#x08">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 9" Index="#x6000" Sub="#x09">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 10" Index="#x6000" Sub="#x0a">
+								<Type>ULINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 11" Index="#x6000" Sub="#x0b">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="Device Status Mapping" Index="#x1a80" Flags="#x0010" SyncMan="3">
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000008}">ARRAY [0..0] OF BYTE</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000006}">ARRAY [0..5] OF BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO State" Index="#xf100" Sub="#x0f">
+								<Type>BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO Toggle" Index="#xf100" Sub="#x10">
+								<Type>BIT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="IO Outputs" Index="#x1600" InOut="1" Flags="#x0021" SyncMan="2">
+							<Entry Name="Pdo Entry 1" Index="#x7000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x7000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000020}">ARRAY [0..3] OF BYTE</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x7000" Sub="#x03">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x7000" Sub="#x04">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x7000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x7000" Sub="#x06">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+					</EtherCAT>
+				</Box>
+				<Box BoxType="9099" Id="8">
+					<Name>Box 2 (CX9020 EtherCAT slave)</Name>
+					<ImageId>1000</ImageId>
+					<EtherCAT SlaveType="3" AdsServerAddress="000000000403ea03" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x01000007">
+						<SyncMan>001000022600010001000000400000040002001026010000</SyncMan>
+						<SyncMan>001200022200010002000000400000040002001222010000</SyncMan>
+						<SyncMan>001a19006400010003000000000000000000001a64000000</SyncMan>
+						<SyncMan>001427002000010004000000000000000000001420000000</SyncMan>
+						<Fmmu>0000000000000000001a00020100000001000000000000000000000000000000</Fmmu>
+						<Fmmu>0000000000000000001400010100000002000000000000000000000000000000</Fmmu>
+						<Fmmu>00000000000000000d0800010100000003000000000000000000000000000000</Fmmu>
+						<SwitchPortData>00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</SwitchPortData>
+						<DcMode>4672656552756e0000000000000000004672656552756e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<DcMode>4443000000000000000000000000000044432d53796e6368726f6e000000000000000000000000000000000000000000000000000000000000000000000020030100000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<Pdo Name="IO Inputs" Index="#x1a00" Flags="#x0021" SyncMan="3">
+							<Entry Name="Pdo Entry 1" Index="#x6000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x6000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 3" Index="#x6000" Sub="#x03">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x6000" Sub="#x04">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x6000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x6000" Sub="#x06">
+								<Type>UINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x6000" Sub="#x07">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 8" Index="#x6000" Sub="#x08">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 9" Index="#x6000" Sub="#x09">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 10" Index="#x6000" Sub="#x0a">
+								<Type>ULINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 11" Index="#x6000" Sub="#x0b">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="Device Status Mapping" Index="#x1a80" Flags="#x0010" SyncMan="3">
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000008}">ARRAY [0..0] OF BYTE</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000006}">ARRAY [0..5] OF BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO State" Index="#xf100" Sub="#x0f">
+								<Type>BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO Toggle" Index="#xf100" Sub="#x10">
+								<Type>BIT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="IO Outputs" Index="#x1600" InOut="1" Flags="#x0021" SyncMan="2">
+							<Entry Name="Pdo Entry 1" Index="#x7000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x7000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000020}">ARRAY [0..3] OF BYTE</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x7000" Sub="#x03">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x7000" Sub="#x04">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x7000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x7000" Sub="#x06">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+					</EtherCAT>
+				</Box>
+				<Box BoxType="9099" Id="9">
+					<Name>Box 3 (CX9020 EtherCAT slave)</Name>
+					<ImageId>1000</ImageId>
+					<EtherCAT SlaveType="3" AdsServerAddress="000000000404eb03" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x01000008">
+						<SyncMan>001000022600010001000000400000040002001026010000</SyncMan>
+						<SyncMan>001200022200010002000000400000040002001222010000</SyncMan>
+						<SyncMan>001a19006400010003000000000000000000001a64000000</SyncMan>
+						<SyncMan>001427002000010004000000000000000000001420000000</SyncMan>
+						<Fmmu>0000000000000000001a00020100000001000000000000000000000000000000</Fmmu>
+						<Fmmu>0000000000000000001400010100000002000000000000000000000000000000</Fmmu>
+						<Fmmu>00000000000000000d0800010100000003000000000000000000000000000000</Fmmu>
+						<SwitchPortData>00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</SwitchPortData>
+						<DcMode>4672656552756e0000000000000000004672656552756e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<DcMode>4443000000000000000000000000000044432d53796e6368726f6e000000000000000000000000000000000000000000000000000000000000000000000020030100000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<Pdo Name="IO Inputs" Index="#x1a00" Flags="#x0021" SyncMan="3">
+							<Entry Name="Pdo Entry 1" Index="#x6000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x6000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 3" Index="#x6000" Sub="#x03">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x6000" Sub="#x04">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x6000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x6000" Sub="#x06">
+								<Type>UINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x6000" Sub="#x07">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 8" Index="#x6000" Sub="#x08">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 9" Index="#x6000" Sub="#x09">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 10" Index="#x6000" Sub="#x0a">
+								<Type>ULINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 11" Index="#x6000" Sub="#x0b">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="Device Status Mapping" Index="#x1a80" Flags="#x0010" SyncMan="3">
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000008}">ARRAY [0..0] OF BYTE</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000006}">ARRAY [0..5] OF BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO State" Index="#xf100" Sub="#x0f">
+								<Type>BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO Toggle" Index="#xf100" Sub="#x10">
+								<Type>BIT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="IO Outputs" Index="#x1600" InOut="1" Flags="#x0021" SyncMan="2">
+							<Entry Name="Pdo Entry 1" Index="#x7000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x7000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000020}">ARRAY [0..3] OF BYTE</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x7000" Sub="#x03">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x7000" Sub="#x04">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x7000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x7000" Sub="#x06">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+					</EtherCAT>
+				</Box>
+				<Box BoxType="9099" Id="4">
+					<Name>Box 4 (CX9020 EtherCAT slave)</Name>
+					<ImageId>1000</ImageId>
+					<EtherCAT SlaveType="3" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x01000009">
+						<SyncMan>001000022600010001000000400000040002001026010000</SyncMan>
+						<SyncMan>001200022200010002000000400000040002001222010000</SyncMan>
+						<SyncMan>001a19006400010003000000000000000000001a64000000</SyncMan>
+						<SyncMan>001427002000010004000000000000000000001420000000</SyncMan>
+						<Fmmu>0000000000000000001a00020100000001000000000000000000000000000000</Fmmu>
+						<Fmmu>0000000000000000001400010100000002000000000000000000000000000000</Fmmu>
+						<Fmmu>00000000000000000d0800010100000003000000000000000000000000000000</Fmmu>
+						<SwitchPortData>00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</SwitchPortData>
+						<DcMode>4672656552756e0000000000000000004672656552756e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<DcMode>4443000000000000000000000000000044432d53796e6368726f6e000000000000000000000000000000000000000000000000000000000000000000000020030100000000000000000000000000000000000000000000000000000000000000</DcMode>
+						<Pdo Name="IO Inputs" Index="#x1a00" Flags="#x0021" SyncMan="3">
+							<Entry Name="Pdo Entry 1" Index="#x6000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x6000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 3" Index="#x6000" Sub="#x03">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x6000" Sub="#x04">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x6000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x6000" Sub="#x06">
+								<Type>UINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x6000" Sub="#x07">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 8" Index="#x6000" Sub="#x08">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 9" Index="#x6000" Sub="#x09">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 10" Index="#x6000" Sub="#x0a">
+								<Type>ULINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 11" Index="#x6000" Sub="#x0b">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="Device Status Mapping" Index="#x1a80" Flags="#x0010" SyncMan="3">
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000008}">ARRAY [0..0] OF BYTE</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000006}">ARRAY [0..5] OF BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO State" Index="#xf100" Sub="#x0f">
+								<Type>BIT</Type>
+							</Entry>
+							<Entry Name="TxPDO Toggle" Index="#xf100" Sub="#x10">
+								<Type>BIT</Type>
+							</Entry>
+						</Pdo>
+						<Pdo Name="IO Outputs" Index="#x1600" InOut="1" Flags="#x0021" SyncMan="2">
+							<Entry Name="Pdo Entry 1" Index="#x7000" Sub="#x01">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 2" Index="#x7000" Sub="#x02">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry>
+								<Type GUID="{18071995-0000-0000-0000-002000000020}">ARRAY [0..3] OF BYTE</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 4" Index="#x7000" Sub="#x03">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 5" Index="#x7000" Sub="#x04">
+								<Type>UDINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 6" Index="#x7000" Sub="#x05">
+								<Type>USINT</Type>
+							</Entry>
+							<Entry Name="Pdo Entry 7" Index="#x7000" Sub="#x06">
+								<Type>UDINT</Type>
+							</Entry>
+						</Pdo>
+					</EtherCAT>
+				</Box>
+				<EtherCAT DeviceDesc="EtherCAT 1 (TwinCAT-Intel PCI Ethernet Adapter (Gigabit))" EnableVirtualSwitch="true" MaxSwitchPorts="7" MaxSwitchFrames="220" MaxSwitchMACs="100">
+					<Redundancy Mode="2" DeviceDesc="EtherCAT 2 (TwinCAT-Intel PCI Ethernet Adapter (Gigabit) #2)" Miniport="\DEVICE\{AE835A43-E892-4D10-9F1C-A86D6892094B}" PreviousPort="16777220" Mac="90e2ba441d01"/>
+				</EtherCAT>
+			</Device>
+		</Io>
+	</Project>
+	<Mappings>
+		<MappingInfo Identifier="{00000000-2001-0850-0220-500810000403}" Id="#x02030010"/>
+		<OwnerA Name="TIPC^MomTest^MomTest Instance">
+			<OwnerB Name="TIID^Device 3 (EtherCAT)^Box 1 (CX9020 EtherCAT slave)">
+				<Link VarA="PlcTask Inputs^MAIN.JoyStickData" VarB="IO Inputs^Pdo Entry 11"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].Address" VarB="IO Inputs^Pdo Entry 10"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].HomedPosition_toMom" VarB="IO Inputs^Pdo Entry 2"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].IsHardDownLimitReached" VarB="IO Inputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].IsHardUpLimitReached" VarB="IO Inputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].IsUltimateLimitReached" VarB="IO Inputs^Pdo Entry 3"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].KidEstopCode" VarB="IO Inputs^Pdo Entry 9"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].Load" VarB="IO Inputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].MotionControllerErrorCode" VarB="IO Inputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].Speed" VarB="IO Inputs^Pdo Entry 8"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[1].UpdateWord_toMom" VarB="IO Inputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].IsUltimateLimitBypassed" VarB="IO Outputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].UpdateWord_FromMom" VarB="IO Outputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].modeAccel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].modeDecel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].modeVel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[1].targetpos_FromMom_Raw" VarB="IO Outputs^Pdo Entry 2"/>
+			</OwnerB>
+			<OwnerB Name="TIID^Device 3 (EtherCAT)^Box 2 (CX9020 EtherCAT slave)">
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].Address" VarB="IO Inputs^Pdo Entry 10"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].HomedPosition_toMom" VarB="IO Inputs^Pdo Entry 2"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].IsHardDownLimitReached" VarB="IO Inputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].IsHardUpLimitReached" VarB="IO Inputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].IsUltimateLimitReached" VarB="IO Inputs^Pdo Entry 3"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].KidEstopCode" VarB="IO Inputs^Pdo Entry 9"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].Load" VarB="IO Inputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].MotionControllerErrorCode" VarB="IO Inputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].Speed" VarB="IO Inputs^Pdo Entry 8"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[2].UpdateWord_toMom" VarB="IO Inputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].IsUltimateLimitBypassed" VarB="IO Outputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].UpdateWord_FromMom" VarB="IO Outputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].modeAccel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].modeDecel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].modeVel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[2].targetpos_FromMom_Raw" VarB="IO Outputs^Pdo Entry 2"/>
+			</OwnerB>
+			<OwnerB Name="TIID^Device 3 (EtherCAT)^Box 3 (CX9020 EtherCAT slave)">
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].Address" VarB="IO Inputs^Pdo Entry 10"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].HomedPosition_toMom" VarB="IO Inputs^Pdo Entry 2"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].IsHardDownLimitReached" VarB="IO Inputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].IsHardUpLimitReached" VarB="IO Inputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].IsUltimateLimitReached" VarB="IO Inputs^Pdo Entry 3"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].KidEstopCode" VarB="IO Inputs^Pdo Entry 9"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].Load" VarB="IO Inputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].MotionControllerErrorCode" VarB="IO Inputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].Speed" VarB="IO Inputs^Pdo Entry 8"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[3].UpdateWord_toMom" VarB="IO Inputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].IsUltimateLimitBypassed" VarB="IO Outputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].UpdateWord_FromMom" VarB="IO Outputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].modeAccel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].modeDecel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].modeVel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[3].targetpos_FromMom_Raw" VarB="IO Outputs^Pdo Entry 2"/>
+			</OwnerB>
+			<OwnerB Name="TIID^Device 3 (EtherCAT)^Box 4 (CX9020 EtherCAT slave)">
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].Address" VarB="IO Inputs^Pdo Entry 10"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].HomedPosition_toMom" VarB="IO Inputs^Pdo Entry 2"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].IsHardDownLimitReached" VarB="IO Inputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].IsHardUpLimitReached" VarB="IO Inputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].IsUltimateLimitReached" VarB="IO Inputs^Pdo Entry 3"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].KidEstopCode" VarB="IO Inputs^Pdo Entry 9"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].Load" VarB="IO Inputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].MotionControllerErrorCode" VarB="IO Inputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].Speed" VarB="IO Inputs^Pdo Entry 8"/>
+				<Link VarA="PlcTask Inputs^MAIN.Kid[4].UpdateWord_toMom" VarB="IO Inputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].IsUltimateLimitBypassed" VarB="IO Outputs^Pdo Entry 6"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].UpdateWord_FromMom" VarB="IO Outputs^Pdo Entry 1"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].modeAccel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 5"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].modeDecel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 7"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].modeVel_FromMom_Raw" VarB="IO Outputs^Pdo Entry 4"/>
+				<Link VarA="PlcTask Outputs^MAIN.Kid[4].targetpos_FromMom_Raw" VarB="IO Outputs^Pdo Entry 2"/>
+			</OwnerB>
+		</OwnerA>
+	</Mappings>
+</TcSmProject>

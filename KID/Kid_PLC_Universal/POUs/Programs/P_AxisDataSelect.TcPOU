@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_AxisDataSelect" Id="{b375e62f-cb66-4512-9c73-0d27e29b8ef1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_AxisDataSelect
+VAR
+	//bExternalControlEnable: BOOL;
+	//CtrWord1: USINT;
+	//CtrWord2: USINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//IF GVL_PLC.bMomTotalControl THEN
+
+//CtrWord1 := UINT_TO_USINT(GVL_DriveParameters.controlWord MOD 256);
+//CtrWord2 := UINT_TO_USINT(GVL_DriveParameters.controlWord / 256);
+
+//IF bExternalControlEnable THEN
+	//GVL_AxisIOData.nDataOut2Hardware := GVL_AxisIOData.nDataOut2ExternalNC;
+	//GVL_AxisIOData.nCtrl1Hardware := GVL_AxisIOData.nCtrl1ExternalNC;
+	//GVL_AxisIOData.nCtrl2Hardware := GVL_AxisIOData.nCtrl2ExternalNC;
+	
+	//GVL_AxisIOData.nDataOut2Hardware := GVL_AxisIOData.nDataOut2ExternalNC;
+	//GVL_AxisIOData.nCtrl1Hardware := CtrWord1;
+	//GVL_AxisIOData.nCtrl2Hardware := CtrWord2;
+//ELSE
+//	GVL_AxisIOData.nDataOut2Hardware := GVL_AxisIOData.nDataOut2LocalNC;
+//	GVL_AxisIOData.nCtrl1Hardware := GVL_AxisIOData.nCtrl1LocalNC;
+//	GVL_AxisIOData.nCtrl2Hardware := GVL_AxisIOData.nCtrl2LocalNC;	
+//END_IF
+
+//KidAxis.ParameterReader();]]></ST>
+    </Implementation>
+    <LineIds Name="P_AxisDataSelect">
+      <LineId Id="3" Count="17" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_stCoEData_Comparison" Id="{e79c4093-58b6-4450-a9cc-6904aa1ae548}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_stCoEData_Comparison
+VAR_INPUT
+	nNumOfPara	:	INT;
+	bExecute: BOOL;
+END_VAR
+VAR_OUTPUT
+	bError	 : BOOL;
+	nErrorID : UINT;
+	bDone 	 : BOOL;
+	
+END_VAR
+VAR
+	nCase : UINT;
+	index : UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[		//change this to a for-loop to step through each read & write array to verify
+		//error codes should kick if it gets stuck
+		//if not the same then run INIT again???
+		
+		//should this be in a Function Block???
+	CASE nCase OF
+		0:	
+			IF bExecute THEN
+				bError := FALSE;
+				index := 1;
+				nCase := 10;
+			END_IF
+		10:	
+			
+			WHILE ((index	<= nNumOfPara) AND NOT bError) DO
+				
+				IF stCoEDataArray_Write.stCoEData[index].dwData <> stCoEDataArray_Read.stCoEData[index].dwData THEN	
+					bError := TRUE;
+					nErrorID := index;
+					nCase :=	9999;
+				ELSE
+					nCase :=	10000;
+				END_IF
+				
+					index := index + 1;
+			END_WHILE
+			
+		9999:
+				
+				nCase := 0;
+						
+		10000:
+			bDone := TRUE;
+			IF NOT bExecute THEN
+				bDone := FALSE;
+				nCase := 0;
+			END_IF
+	END_CASE	]]></ST>
+    </Implementation>
+    <LineIds Name="FB_stCoEData_Comparison">
+      <LineId Id="3" Count="36" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

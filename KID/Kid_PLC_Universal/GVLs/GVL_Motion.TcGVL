@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <GVL Name="GVL_Motion" Id="{d1b038eb-5553-4c06-b04d-de31224939f8}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+	
+
+	
+	bNC_Reset				:BOOL;		//Resets the NC Axis
+	
+	//nAxis_Status			:int;		//
+	
+END_VAR
+VAR_GLOBAL PERSISTENT
+		lrDistance_1_Motor_Rev	:LREAL := 350;		//Distance per one Motor revolution (mm)
+
+	//NC-Encoder_P2
+	//lrEncoder_P2_ScalingNum: LREAL := 0.0004;		//Scaling Factor Numerator (mm/INC)
+	
+	//NC-Encoder
+	lrEncoder_ScalingNum	:REAL :=  0.0004;		//Scaling Factor Numerator (mm/INC)
+//NC-Parameters
+	rHoist_MaxVelocity		:REAL;		//Max Velocity of Motor (mm/s)
+	rHoist_SelectedVelocity	:LREAL := 0;		//User selected Velocity, P36 limits to rHoist_MaxVelocity
+	//rMotor_GearRatio		:REAL;		//Gearbox ratio
+	
+	//lrReference_Velocity	:LREAL;		//Maximum Velocity +10% (mm/s2)
+	//lrMax_Acceleration		:LREAL;		//Maximum Motor Acceleration (mm/s2)
+	//lrMax_Deceleration		:LREAL;		//Maximum Motor Deceleration (mm/s2)
+	//lrSetup_MotorRevs_Per_Dist	:LREAL;	//Number of motor revolutions per reference distance
+	//lrSetup_Ref_Distance	:LREAL;		//Reference Travel distance (mm)
+
+	//lrDrum_Diameter			:LREAL;		//Drum diameter (mm)
+	//lrWire_Diameter			:LREAL;		//Wire rope Diameter (mm)
+	//lrDrum_Groove_Depth		:LREAL;		//Drum diameter groove depth (% of wire rope diameter)
+	
+	//lrEncoder_MTurnBits		:LREAL;		//Encoder Multiturn bits
+	//lrEncoder_STurnBits		:LREAL;		//Encoder Singleturn bits
+	lrDistance_1_Drum_Rev	:LREAL;		//Distance per one drum revolution (mm)
+	// Delay for releasing the bDrive_Enable
+	//tMotorBrake_Delay		: TIME;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

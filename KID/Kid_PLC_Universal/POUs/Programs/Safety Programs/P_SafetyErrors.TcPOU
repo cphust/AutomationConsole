@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_SafetyErrors" Id="{4d8975fb-66fe-4347-ac0b-2c21e0904f31}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_SafetyErrors
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF GVL_Safe_IO.bCom_Error OR 
+		GVL_Safe_IO.bFB_Error OR
+		GVL_Safe_IO.bOut_Error  THEN
+	GVL_PLC.bSafetyError := TRUE;
+END_IF
+
+
+
+
+
+IF GVL_Safe_IO.bAck_Error THEN
+	GVL_PLC.bSafetyError := FALSE;
+END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="P_SafetyErrors">
+      <LineId Id="3" Count="2" />
+      <LineId Id="8" Count="2" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

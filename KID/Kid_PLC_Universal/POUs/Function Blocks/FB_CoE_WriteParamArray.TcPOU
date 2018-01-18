@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_CoE_WriteParamArray" Id="{82b192ee-63c7-4126-9159-d00315782f70}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CoE_WriteParamArray
+VAR_INPUT
+	bExecute: BOOL;
+	sNetId: T_AmsNetID;
+	nSlaveAddr: UINT;
+	tTimeout: TIME;
+	nSizeOfArr: USINT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bDone: BOOL;
+	/// Current ST_CoEDataArray Array Location being Write
+	nCurArrLoc: INT;
+	bError: BOOL;
+	/// http://infosys.beckhoff.com/content/1033/tcadscommon/html/ads_returncodes.htm
+	nErrorID: UDINT;
+END_VAR
+VAR
+	fbCoE_Write: FB_EcCoESdoWrite;
+	nCase: INT;
+	nIndex: INT;
+END_VAR
+VAR_IN_OUT
+	stCoEDataArray: ST_CoEDataArray;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*++++++++++++++ CoE communication ++++++++++++++++++++++*)
+fbCoE_Write.sNetId		:= sNetId;
+fbCoE_Write.nSlaveAddr 	:= nSlaveAddr;
+fbCoE_Write.tTimeout		:= tTimeout;
+
+//Automatically Resets FB if bExecute is False
+IF NOT bExecute THEN
+	nCase 		:= 0;
+	bError 		:= FALSE;
+	bBusy 		:= FALSE;
+	bDone 		:= FALSE;	
+END_IF
+
+CASE nCase OF
+	0:
+		IF bExecute THEN
+			bBusy		:= TRUE;
+			nCase 		:= 10;
+			nErrorID 	:= 0;
+			nCurArrLoc 	:= 1;
+			fbCoE_Write(bExecute:=FALSE);
+		END_IF
+		
+		
+	10: //Write CoE Address Data
+		fbCoE_Write(
+			nIndex 		:= stCoEDataArray.stCoEData[nCurArrLoc].nIndex,
+			nSubIndex 	:= stCoEDataArray.stCoEData[nCurArrLoc].nSubIndex,
+			pSrcBuf 	:= ADR(stCoEDataArray.stCoEData[nCurArrLoc].dwData),
+			cbBufLen 	:= stCoEDataArray.stCoEData[nCurArrLoc].nDataLen,
+			bExecute 	:= TRUE );
+			
+		IF fbCoE_Write.bError THEN
+			nCase	:= 9999;
+		ELSIF NOT fbCoE_Write.bBusy THEN
+			nCase := 20;
+		END_IF
+	
+		
+	20: //Check for End of Array
+		IF nCurArrLoc >= nSizeOfArr THEN
+			nCase := 10000;
+			bDone := TRUE;
+		ELSE
+			nCurArrLoc := nCurArrLoc + 1;
+			nCase := 10;
+			fbCoE_Write(bExecute:=FALSE);
+		END_IF
+		
+			
+	9999: //Error
+		bError 	:= TRUE;
+		nErrorID := fbCoE_Write.nErrID;
+		fbCoE_Write(bExecute:=FALSE);
+		nCase	:= 10000;
+		
+		
+	10000: //Wait for Next 'Execute' Rising Edge
+		bBusy := FALSE;
+		IF NOT bExecute THEN
+			nCase := 0;
+		END_IF
+		
+END_CASE]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CoE_WriteParamArray">
+      <LineId Id="3" Count="62" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

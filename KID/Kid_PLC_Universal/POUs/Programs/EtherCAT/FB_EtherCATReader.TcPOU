@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_EtherCATReader" Id="{1d3ebd30-390d-4f3c-93df-f8f5b484e808}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EtherCATReader
+VAR_INPUT
+		ID : USINT;
+END_VAR
+VAR_OUTPUT
+	WrittenAll : BOOL := FALSE;
+END_VAR
+
+VAR
+	SymInfo  : PLC_ReadSymInfo;
+	VarSymInfo  :  PLC_ReadSymInfoByName;
+	Exec : BOOL;
+	
+	DataInt : DINT;
+	//RecievedData : ARRAY [1..256] OF INT; //used to count reads of each parameter
+	i : INT;
+	ParametersWritten : USINT;
+	RefreshParameters : BOOL := FALSE;
+	
+	ParameterID_FromMom AT %I* : USINT;
+	ParameterWord_FromMom AT %I* : DINT; //ParameterWord cycles through many arrays to send less time critical data
+	ParameterID_ToMom AT %Q* : USINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//ParameterWord_FromMom consists of 32 bytes. The first(greatest) 8 bytes ID the Variable to write and the last 24 include the data. 
+// ParameterID		Parameter To Write					Format
+// 1				GVL_Motion.lrEncoder_ScalingNum		1/DATAINT := ScalingNum
+// 2				GVL_Index.Admin_Max					:= 512 * DataInt (largest bit is sign)	
+// 3				GVL_Index.Admin_Min					:= 	512 * DataInt (largest bit is sign)	
+// 4				GVL_Index.Direction_Flipped			>0 		
+// 5				GVL_Motion.lrDistance_1_Motor_Rev	:= ?????????????????????????
+// 6				GVL_Speeds.QuickStop_Accel		
+// 7 				GVL_Speeds.lrDecel_For_EStop		:=?
+SymInfo(Port:=851, Start:=Exec);
+VarSymInfo(Port:=851, SymName:= 'P30_MAIN.execute', Start:=Exec);
+
+DataInt := Parameterword_FromMom ;
+ID := ParameterID_FromMom ;
+
+CASE ID OF
+//1: 	GVL_Motion.lrEncoder_ScalingNum := 1/DINT_TO_LREAL(DataInt);
+2: 	GVL_Index.Home_Switch_Offset := DataInt ;
+3: 	GVL_Index.Admin_Min :=  DataInt ;
+4:  GVL_Index.Direction_Flipped := DataInt > 0;
+5: 	GVL_Motion.lrDistance_1_Motor_Rev := DataInt;
+//6:	GVL_Speeds.QuickStop_Accel := DataInt;
+//7:	GVL_Speeds.lrDecel_For_EStop := DataInt;
+	
+ELSE
+	ID := 0;
+END_CASE
+
+ParameterID_ToMom := ParameterID_FromMom;
+
+//RecievedData[ID] := RecievedData[ID] + 1;
+
+ParametersWritten := 0;
+FOR i := 1 TO 256 DO
+//	IF RefreshParameters THEN RecievedData[i] := 0;  END_IF	
+	//IF RecievedData[i] > 0 THEN ParametersWritten := ParametersWritten + 1; END_IF
+END_FOR
+
+IF RefreshParameters THEN RefreshParameters := FALSE; END_IF
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_EtherCATReader">
+      <LineId Id="9" Count="0" />
+      <LineId Id="13" Count="4" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="101" Count="1" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="126" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="76" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

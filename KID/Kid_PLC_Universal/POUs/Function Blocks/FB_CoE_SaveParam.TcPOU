@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="FB_CoE_SaveParam" Id="{0b395fec-1a2c-4a65-8c8a-2c7ea5540196}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CoE_SaveParam
+VAR_INPUT
+	bExecute: BOOL;
+	sNetId: T_AmsNetID;
+	nSlaveAddr: UINT;
+	tTimeout: TIME;
+	nSizeOfArr: USINT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bDone: BOOL;
+	
+	bError: BOOL;
+	/// http://infosys.beckhoff.com/content/1033/tcadscommon/html/ads_returncodes.htm
+	nErrorID: UDINT;
+	/// http://infosys.beckhoff.com/content/1033/tcadscommon/html/ads_returncodes.htm
+END_VAR
+VAR
+	fbCoE_Write: FB_EcCoESdoWrite;
+	fbCoE_Read: FB_EcCoESdoRead;
+	
+	nCase:	INT;
+	nIndex:	INT;
+	nSubIndex:	INT;
+	nData: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//Issues a SaveAll Command to the Drive to store parameters in case of powerloss
+
+(*++++++++++++++ CoE communication ++++++++++++++++++++++*)
+fbCoE_Read.sNetId		:= sNetId;
+fbCoE_Read.nSlaveAddr 	:= nSlaveAddr;
+fbCoE_Read.tTimeout		:= tTimeout;
+
+fbCoE_Write.sNetId		:= sNetId;
+fbCoE_Write.nSlaveAddr 	:= nSlaveAddr;
+fbCoE_Write.tTimeout	:= tTimeout;
+
+//Automatically Resets FB if bExecute is False
+IF NOT bExecute THEN
+	nCase 		:= 0;
+	bError 		:= FALSE;
+	bBusy 		:= FALSE;
+	bDone 		:= FALSE;	
+END_IF
+
+CASE nCase OF
+	0:
+		IF bExecute THEN
+			bBusy		:= TRUE;
+			nCase 		:= 10;
+			nErrorID 	:= 0;
+			fbCoE_Write(bExecute:=FALSE);
+		END_IF
+		
+		
+	10: //Write CoE Address Data
+		fbCoE_Write(
+			sNetId:= , 
+			nSlaveAddr:= GVL_IO.stAmsAddr_Kid_1.port, 
+			nSubIndex:= 16#01, 
+			nIndex:= 	16#1010, 
+			pSrcBuf:= 	ADR(nData), 
+			cbBufLen:= 	SIZEOF(nData), 
+			bExecute:= TRUE, 
+			tTimeout:= , 
+			bBusy=> , 
+			bError=> , 
+			nErrId=> );
+
+		IF fbCoE_Write.bError THEN
+			nCase	:= 9998;
+		ELSIF NOT fbCoE_Write.bBusy THEN
+			fbCoe_Write(bExecute:=FALSE);
+			nCase := 20;
+		END_IF
+	
+	20:	//Read CoE Address Data, place in internal variable
+		fbCoE_Read(
+			sNetId:= , 
+			nSlaveAddr:= GVL_IO.stAmsAddr_Kid_1.port, 
+			nSubIndex:= 16#01, 
+			nIndex:= 	16#1010, 
+			pDstBuf:=	ADR(nData) , 
+			cbBufLen:= 	SIZEOF(nData), 
+			bExecute:= TRUE, 
+			tTimeout:= , 
+			bBusy=> , 
+			bError=> , 
+			nErrId=> );
+	
+		IF fbCoE_Read.bError THEN
+			nCase	:= 9999;
+		ELSIF NOT fbCoE_Read.bBusy THEN
+			fbCoe_Read(bExecute:=FALSE);
+			nCase := 30;
+		END_IF	
+		
+	30:	//Compare that Write & Read data are same, if not then go to Case 10, else go to case 40
+		IF fbCoE_Write.pSrcBuf = fbCoE_Read.pDstBuf THEN
+			nCase := 40;
+		ELSE
+			nCase := 10;
+		END_IF
+	
+	40:	//issue a reset command to drive
+		//To Do: add a reset drive command
+		
+	
+	
+	9998: //Error
+		bError 	:= TRUE;
+		nErrorID := fbCoE_Write.nErrID;
+		fbCoE_Write(bExecute:=FALSE);
+		nCase	:= 10000;
+	
+	9999: //Error
+		bError 	:= TRUE;
+		nErrorID := fbCoE_Read.nErrID;
+		fbCoE_Read(bExecute:=FALSE);
+		nCase	:= 10000;
+		
+	10000:
+		
+	
+END_CASE
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_CoE_SaveParam">
+      <LineId Id="3" Count="98" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

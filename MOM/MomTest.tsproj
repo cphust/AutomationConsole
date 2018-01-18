@@ -225,7 +225,7 @@
 			</Routes>
 		</System>
 		<Plc>
-			<Project GUID="{82C62B92-C6C6-4332-99E0-832D1447657E}" Name="MomTest" PrjFilePath="MomTest\MomTest.plcproj" TmcFilePath="MomTest\MomTest.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e">
+			<Project GUID="{82C62B92-C6C6-4332-99E0-832D1447657E}" Name="MomTest" PrjFilePath="MomTest\MomTest.plcproj" TmcFilePath="MomTest\MomTest.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" ClearInvalidPersist="true">
 				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" CopyTmiToTarget="true" KeepUnrestoredLinks="2" TmcPath="MomTest\MomTest.tmc">
 					<Name>MomTest Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
@@ -756,7 +756,7 @@ Patient4 : Patient;]]>
 			</Project>
 		</Plc>
 		<Io>
-			<Device DevType="111" DevFlags="#x0003" AmsPort="28675" AmsNetId="0.0.0.0.4.1" RemoteName="Device 3 (EtherCAT)" Id="3">
+			<Device DevType="111" DevFlags="#x0003" AmsPort="28675" AmsNetId="10.99.1.1.4.1" RemoteName="Device 3 (EtherCAT)" Id="3">
 				<Name>Device 3 (EtherCAT)</Name>
 				<AddressInfo>
 					<Pnp>
@@ -944,7 +944,7 @@ Patient4 : Patient;]]>
 						</Pdo>
 					</EtherCAT>
 				</Box>
-				<Box Disabled="true" BoxType="9099" Id="9">
+				<Box BoxType="9099" Id="9">
 					<Name>Box 3 (CX9020 EtherCAT slave)</Name>
 					<ImageId>1000</ImageId>
 					<EtherCAT SlaveType="3" AdsServerAddress="000000000404eb03" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x01000008">
@@ -1032,7 +1032,7 @@ Patient4 : Patient;]]>
 						</Pdo>
 					</EtherCAT>
 				</Box>
-				<Box Disabled="true" BoxType="9099" Id="4">
+				<Box BoxType="9099" Id="4">
 					<Name>Box 4 (CX9020 EtherCAT slave)</Name>
 					<ImageId>1000</ImageId>
 					<EtherCAT SlaveType="3" PdiType="#x0c08" MboxDataLinkLayer="true" StateMBoxPolling="true" CycleMBoxPollingTime="0" CoeType="55" EoeType="1" VendorId="#x00000002" ProductCode="#x233c6034" RevisionNo="#x00111b82" InfoDataAddr="true" InfoDataNetId="true" GenerateOwnNetId="true" InitializeOwnNetId="true" PortPhys="17" IdentificationAdo="308" MaxSlotCount="256" MaxSlotGroupCount="1" SlotPdoIncrement="1" SlotIndexIncrement="16" Type="CX9020 EtherCAT slave" Desc="CX9020 EtherCAT slave" PortABoxInfo="#x01000009">
@@ -1121,7 +1121,7 @@ Patient4 : Patient;]]>
 					</EtherCAT>
 				</Box>
 				<EtherCAT DeviceDesc="EtherCAT 1 (TwinCAT-Intel PCI Ethernet Adapter (Gigabit))" EnableVirtualSwitch="true" MaxSwitchPorts="7" MaxSwitchFrames="220" MaxSwitchMACs="100">
-					<Redundancy Mode="2" DeviceDesc="EtherCAT 2 (TwinCAT-Intel PCI Ethernet Adapter (Gigabit) #2)" Miniport="\DEVICE\{AE835A43-E892-4D10-9F1C-A86D6892094B}" PreviousPort="16777224" Mac="90e2ba441d01"/>
+					<Redundancy Mode="2" DeviceDesc="EtherCAT 2 (TwinCAT-Intel PCI Ethernet Adapter (Gigabit) #2)" Miniport="\DEVICE\{AE835A43-E892-4D10-9F1C-A86D6892094B}" PreviousPort="16777220" Mac="90e2ba441d01"/>
 				</EtherCAT>
 			</Device>
 		</Io>

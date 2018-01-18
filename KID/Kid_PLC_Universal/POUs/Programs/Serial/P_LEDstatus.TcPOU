@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_LEDstatus" Id="{bd46a018-b85a-49ad-87dd-3c53345e78ce}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_LEDstatus
+VAR
+	bErrorRecovery: BOOL;
+	fbR_Trig: R_Trig;
+	fbPulse: FB_Pulse;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbR_Trig(CLK:=NOT GVL_PLC.bSafetyError);
+
+fbPulse(bEnable:= TRUE, tTimeOn:= GVL_HMI.tPulseTime, tTimeOff:= GVL_HMI.tPulseTime, bPulse=> );
+
+IF fbR_Trig.Q THEN
+	GVL_Serial.nJoystickLED := 6;
+END_IF
+
+IF GVL_PLC.bLocalKeySwitchInput THEN
+		GVL_Serial.nJoystickLED := 5;
+END_IF
+
+IF GVL_PLC.bSafetyError OR
+	NOT GVL_Safe_IO.bES_Local_Status THEN
+	GVL_Serial.nJoystickLED := 3;
+	GVL_Serial.bDeadmanLED := FALSE;
+	GVL_Serial.bZonLED := FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="P_LEDstatus">
+      <LineId Id="3" Count="16" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

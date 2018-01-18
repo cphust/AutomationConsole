@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_Serial" Id="{012e2640-da2b-48e3-a4a8-f6b320642620}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_Serial
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[P_EL600x();
+P_LEDstatus();
+P_SerialRemote();
+P_JoystickSetup();]]></ST>
+    </Implementation>
+    <LineIds Name="P_Serial">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

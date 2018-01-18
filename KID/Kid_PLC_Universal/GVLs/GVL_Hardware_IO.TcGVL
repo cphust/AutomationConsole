@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <GVL Name="GVL_Hardware_IO" Id="{28ba2146-714f-4516-971e-bb409da62671}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+//Locked Roter Fan Sensor
+	bFan_PLC_Locked			AT %I* : BOOL;	//EL1008, IN-1, Cooling Fan Locked Rotor Sensor
+	
+//Load Brake Feedback
+	bLoad_Brake_Feedback	AT %I*: BOOL;	//EL1008, IN-2, Check-Back from Load-Side Brake
+
+//Keyswitch Return from Local Control
+	bLocal_Keyswitch_Return	AT %I*: BOOL;	//EL1008, IN-3, Local power switch or Local Control Lockout
+
+//Deadman_State
+	bLocal_Deadman_State	AT %I*: BOOL;	//EL1008, IN-4, From Joystick DM
+	
+//Power Supply "OK"
+	bPower_Supply_OK		AT %I*: BOOL;	//EL1008, IN-5, Tells if Local Power Supply is OK
+
+//UPS "Ready"
+	bUPS_Ready				AT %I*: BOOL;	//EL1008, IN-6, Is Local UPS unit in a "Ready" State
+
+//UPS "Buffering"
+	bUPS_Buffering			AT %I*: BOOL;	//EL1008, IN-7, Is Local UPS unit on Battery Power
+
+//UPS "Replace Battery"
+	bUPS_BatteryReplace		AT %I*: BOOL;	//EL1008, IN-8, Does the UPS Battery Need replacement
+
+	nWeight : DINT;
+	bTara : BOOL;
+//OUTPUTS
+
+	bMotion_LED				AT %Q* : BOOL;	//EL2808, OUT-1, Motion LED
+	
+	bDeadman_Drive			AT %Q* : BOOL;	//EL2808, OUT-2, Deadman Output to Drive Input DIO-4
+
+	bEm_Brake_Release_LED	AT %Q* : BOOL;	//EL2808, OUT-3, Emergency Brake Release Button LED
+
+	bHMI_Power				AT %Q* : BOOL;	//EL2808, OUT-4, HMI Power Supply
+
+	bES_Local_LED			AT %Q*: BOOL;	//EL2808, OUT-5, Local E-Stop LED
+
+	bLocal_Keyswitch_Supply	AT %Q*: BOOL;	//EL2808, OUT-6, Power Supply for Local Remote Pendant
+	
+	bFan_PLC				AT %Q*: BOOL;	//EL2808, OUT-7, PLC Cooling Fan Supply
+
+	bFan_Case				AT %Q*: BOOL;	//EL2808, OUT-8, Case Cooling Fan Supply
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,426 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.7">
+  <POU Name="P1_INIT" Id="{6c5fd211-d594-45fc-958b-34f0891e5e4a}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P1_INIT
+VAR
+	nCase				: INT;
+	FailCount 			: INT;
+	Secondary_Encoder_ERROR : BOOL;
+	maxslop : DINT;
+	minslop : dint;
+	//nCase_Read			: UINT;
+	//nCase_Write			: UINT;
+	FileOpen : FB_FileOpen;
+	bNC_Parameters_Done	: BOOL;
+	bCalculate_NC_Settings_Done: BOOL;
+	//fbCoE_doRead		: FB_EcCoESdoRead;
+	P1					: INT;
+	nErrorID			: UDINT;
+
+	fbWritePersistentData: FB_WritePersistentData;
+	//RegSetValue : FB_RegSetValue;
+	//VariableNames : ARRAY[1..5] OF STRING;
+
+	
+	CheckParam : STRING;
+	CheckString : STRING;
+	//FilePos : DINT;
+	FileRead : FB_FileRead;
+	//FileSeek : FB_FileSeek;
+	GetLocalAMSNetID : FB_GetLocalAmsNetId;
+	GetHostName : FB_GetHostName;
+	ParamString : STRING(5000);
+	FileClose : FB_FileClose;
+	
+	fbUpsPulse: FB_Pulse;
+	nTestCnt: INT;
+	
+	NetIDString : String;
+	bFileOpenErrorID : UDINT;
+	bFileOpenError : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+GVL_IO.kidAxis.Denominiator1:=2;
+GVL_IO.kidAxis.Denominiator2:=2;
+
+bMotor_Not_Moving	:=	true;
+ 
+nTestCnt := nTestCnt + 1;
+
+ KidAxis.Status();//This function calls the ReadStatus of the axis.
+
+//Run Always (Error Handling)
+P20_ErrorHandling();
+
+//Brake Control
+//P42_BrakeControl(); Set in a FAST TASK
+
+//Set bMotor_Not_Moving
+
+
+
+//Case Statement for Sequential Initialization on Startup
+CASE nCase OF
+
+0: 
+kidAxis.CheckIn.momControl := FALSE;
+	FAILCOUNT := 0;
+	P4_PowerUp();
+	GetLocalAMSNetID(bExecute := FALSE);
+	GetHostName(bExecute := FALSE);
+	FileOpen(bExecute := FALSE);
+	FileClose(bExecute := FALSE);
+	nCase := nCase +1;
+	FileRead(bExecute := FALSE);
+	
+1:		//Get NetID of PLC
+kidAxis.P2Offset := KidAxis.actualPos - REAL_TO_DINT(KidAxis.P2Position * 8.6);
+	GetLocalAMSNetID(bexecute := TRUE, AddrString => GVL_PLC.sNetID);
+	IF sNetID <> '0.0.0.0.0.0' THEN 
+		nCase := nCase + 1; 
+		NetIDString := sNetID;
+	END_IF
+
+2: 		//Make FileName of Parameters
+	GetHostName(sNetID := GVL_PLC.sNetId,
+				bExecute := TRUE,
+				sHostName => GVL_PLC.HostName);
+	IF len(GVL_PLC.HostName) > 0 THEN
+		nCase := nCase + 1;
+	END_IF
+3:  //get handle on parameter file
+		FileOpen(sNetID :=   GVL_PLC.sNetID,//concat(Concat(Concat(Concat(concat(Concat(Concat(Concat(Concat(Concat(concat(CONCAT(BYTE_TO_STRING(stAmsAddr_Kid_1.netId[0]), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[1])),'.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[2])), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[3])),  '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[4])), '.'), BYTE_TO_STRING(stAmsAddr_Kid_1.netId[5])),':'), WORD_TO_STRING(stAMSAddr_Kid_1.port)),
+					  sPathName :=  CONCAT(CONCAT('\Hard DIsk2\ParameterFiles\', GVL_PLC.HostName), '.txt'),
+					  nMode := fopen_moderead  OR FOPEN_MODETEXT,
+					  ePath := PATH_GENERIC, 
+					  bExecute := TRUE,
+					  tTimeOut := T#3S,
+					  hFile => GVL_DriveParameters.initFile,
+					  bError => bFileOpenError,
+					  nErrId => bFileOpenErrorID );	
+					  
+		IF GVL_DriveParameters.initFile <> 0 THEN
+			nCase := nCase + 1;
+		ELSE
+				FailCount := FailCount + 1;
+				IF FailCount > 1000 THEN nCase := nCase + 2; END_IF
+		END_IF
+//	nCase := 10000; // Jump to P30_MAIN for Virtual Programming
+4:
+			
+			FileRead(sNetID := GVL_PLC.sNetId,
+					hFile := GVL_DriveParameters.initFile,
+					bExecute := TRUE,  
+					pReadBuff := ADR(ParamString),
+					cbReadLen := SIZEOF(ParamString),
+					tTimeOut := T#3S);
+			IF LEN(ParamString) > 10 AND FileRead.bBusy = FALSE THEN
+			
+				nErrorID := 1;
+			
+				CheckString := Left(ParamString, Find(ParamString, '$N')-1);
+				p1 :=Find(ParamString, CheckString);
+				ParamString := Right(ParamString, len(ParamString) - Len(CheckString)-1);
+				CheckParam := Left(CheckString, Find(CheckString, ', '));
+				CheckString := Right(CheckString, len(CheckString) - len(CheckParam) -1) ; 
+				GVL_Index.Initialized := TRUE;
+				IF NOT GVL_Index.Initialized THEN
+					//IF Find(CheckParam, 'Home_Offset')>1 THEN GVL_Index.Home_Offset := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'lrEncoder_ScalingNum')>1 THEN GVL_Motion.lrEncoder_ScalingNum := STRING_TO_LREAL(CheckString); END_IF
+					//IF Find(CheckParam, 'Home_Switch_Offset')>1 THEN GVL_Index.Home_Switch_Offset := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'Admin_Max_UU')>1 THEN GVL_Index.User_Max_UU := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'Admin_Min_UU')>1 THEN GVL_Index.User_Min_UU := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'Direction_Flipped')>1 THEN GVL_Index.Direction_Flipped := STRING_TO_BOOL(CheckString); END_IF
+					//IF Find(CheckParam, 'Admin_Max')>1 AND Find(CheckParam, 'Admin_Max_UU')=0 THEN GVL_Index.Admin_Max := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'Admin_Min')>1 AND Find(CheckParam, 'Admin_Min_UU')=0 THEN GVL_Index.Admin_Min := STRING_TO_DINT(CheckString); END_IF
+					//IF Find(CheckParam, 'lrDistance_')>1 THEN GVL_Motion.lrDistance_1_Motor_Rev := STRING_TO_DINT(CheckString); END_IF
+			GVL_INDEX.Initialized := TRUE;
+				//	IF GVL_Index.Home_Offset + (GVL_Index.Admin_Max_UU * LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum)) <> GVL_Index.Admin_Max THEN GVL_Index.Admin_Max := GVL_Index.Home_Offset + GVL_Index.Admin_Max_UU * LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum) ; END_IF
+				//	IF GVL_Index.Home_Offset  + (GVL_Index.Admin_Min_UU * LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum)) <> GVL_Index.Admin_Min THEN GVL_Index.Admin_Min := GVL_Index.Home_Offset  + (GVL_Index.Admin_Min_UU * LREAL_TO_INT(1/GVL_Motion.lrEncoder_ScalingNum)) ; END_IF
+			END_IF
+CheckString := '';
+//RegSetValue(sSubKey
+				CheckParam := '';
+			ELSIF FileRead.bBusy = FALSE THEN
+				nCase := nCase + 1;
+			END_IF
+				
+			//END_WHILE*)
+		
+				//ParamString := RIGHT(ParamString, LEN(ParamString) - Len(CheckString));
+			
+			
+		
+			//IF NOT filegets.bBusy THEN filegets.bExecute := FALSE; END_IF
+	
+5: FileClose(sNetID := GVL_PLC.sNetId,
+			 hFile := GVL_DriveParameters.initFile,
+			 bExecute := TRUE);
+			 nCase := 5 + (BOOL_TO_INT(NOT fileclose.bBusy) * 5);
+	GVL_Index.Initialized := TRUE;
+	GVL_Index.Home_Offset_UU := LREAL_TO_DINT(gvl_index.Home_Offset *GVL_Motion.lrEncoder_ScalingNum);
+	kidAxis.modeWindow:= LREAL_TO_DINT(3.5/GVL_Motion.lrEncoder_ScalingNum);
+	
+10:	
+	GVL_PLC.nDriveType := 1;
+	A1_Calculate_NC_Settings();
+	
+	IF bCalculate_NC_Settings_Done THEN
+		GVL_Safe_IO.bSafetySystem_Reset := TRUE;
+		nCase := 40;
+	END_IF
+	
+20:
+	
+	
+	IF bNC_Parameters_Done THEN
+		nCase := nCase +10;
+	END_IF
+	
+	
+		
+30:
+	
+		nCase := nCase +10; 					//this is just for a test until parameters are verified
+
+	P2_DriveLoad();							//Verify the drive params are correct
+
+
+			nCase	:= 40;
+	
+	
+
+40:
+//Don't Run system until everything is setup
+//	IF NOT GVL_Modes.bDrive_Verified THEN
+		//						//
+//	ELSE
+			nCase := nCase +10;
+//	END_IF
+
+
+
+			
+50:
+	//Load Saved position (from powerdown store) if encoder is incremental	
+	//IF GVL_Modes.bEncoder_Type_Incremental THEN
+	//	P4_PowerUp.A1_Position_Restore();
+	A1_Calculate_NC_Settings();				// Not needed any more because it is handled by the P36_Motion program
+	//END_IF
+		nCase := 10000; 
+	
+
+	
+60:
+//	kidAxis.Status();
+//	kidAxis.Init();
+//	IF KidAxis.Init.Ready THEN
+//		nCase := 10000; 					//this is just for a test until parameters are verified
+//	END_IF
+
+
+
+//9999:	//Error Handling
+//	GVL_PLC.udnFlyhousePLCErrorID := 16#01000 + 16#00000 + nErrorID;		//Program# + Action# + Case#
+	
+10000:	//Ok to Run P30_MAIN
+
+
+	IF GVL_PLC.nDriveType = 1  OR GVL_PLC.nDriveType = 0 THEN
+		GVL_Safe_IO.bSlack_Line_Bypass_Enable := TRUE;
+		GVL_Safe_IO.bCross_Groove_Bypass_Enable := TRUE;
+	END_IF
+	
+	//IF nTestCnt < 1000 THEN RETURN; END_IF
+//	KidAxis.EncoderSlop := KidAxis.actualPos - KidAxis.P2Offset - REAL_TO_DINT(KidAxis.P2Position * 8.6);
+//IF(kidAxis.EncoderSlop > MaxSlop) THEN maxslop := kidAxis.EncoderSlop; END_IF
+	//IF(kidAxis.EncoderSlop < MinSlop) THEN minslop := kidAxis.EncoderSlop; END_IF
+
+//IF ABS(kidAxis.EncoderSlop) > 10000 THEN
+//	Secondary_Encoder_ERROR:=TRUE;
+	//GVL_Safe_io.bContactor := FALSE;
+//	ELSE
+//bMotor_Not_Moving	:=	KidAxis.HomedPosition_toMom - (GVL_Index.Home_Offset -KidAxis.actualPos)/ LREAL_TO_INT(1/ GVL_Motion.lrEncoder_ScalingNum) < 2;			//Motor is not moving, PLC
+fbUpsPulse(bEnable:= GVL_Hardware_IO.bUPS_Buffering, tTimeOn:= T#30MS, tTimeOff:= T#3S, bPulse=> );
+
+fbWritePersistentData(
+	NETID:= , 
+	PORT:= 851, 
+	START:= fbUpsPulse.bPulse OR GVL_Hardware_IO.bUPS_Buffering OR MAIN.LoopCount MOD 100000 < 500, 
+	TMOUT:= T#100S, 
+	MODE:= SPDM_2PASS, 
+	BUSY=> , 
+	ERR=> , 
+	ERRID=>nErrorID );
+
+		MAIN();	//Run P30_MAIN Program
+//END_IF
+
+
+
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Action Name="A1_Calculate_NC_Settings" Id="{fe07ac35-bc40-4197-ac9e-94e7ebd1272f}">
+      <Implementation>
+        <ST><![CDATA[(*
+//*****************************************************************Notes**********************************************************\\
+// This Action will take the user inputed parameters on the HMI and calculate the proper settings for
+//	the NC controller to allow for proper motion and setup
+
+
+
+  
+  
+//*****************************************************************Revs**********************************************************\\
+   (          who            )(    Date    ) (   Rev     ) (								Disc						)
+     Chris Mauban			 	2016.05.03		0.00.01		Added Global Error ID
+	 Chris Mauban				2016.05.04		0.00.01		Removed individual cases for calculations
+	 														Moved All NC_WriteParameters to A3_Write_NC_Parameters
+				
+     		 								 				
+	 						
+	
+//*****************************************************************Code**********************************************************\\
+*)
+
+
+
+
+	bCalculate_NC_Settings_Done := TRUE;
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+    <LineIds Name="P1_INIT">
+      <LineId Id="1146" Count="0" />
+      <LineId Id="255" Count="0" />
+      <LineId Id="1111" Count="0" />
+      <LineId Id="6" Count="0" />
+      <LineId Id="1333" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="1031" Count="0" />
+      <LineId Id="30" Count="9" />
+      <LineId Id="50" Count="4" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="1147" Count="0" />
+      <LineId Id="814" Count="0" />
+      <LineId Id="501" Count="0" />
+      <LineId Id="290" Count="0" />
+      <LineId Id="287" Count="1" />
+      <LineId Id="499" Count="0" />
+      <LineId Id="286" Count="0" />
+      <LineId Id="498" Count="0" />
+      <LineId Id="289" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="1242" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="265" Count="0" />
+      <LineId Id="293" Count="0" />
+      <LineId Id="996" Count="0" />
+      <LineId Id="294" Count="0" />
+      <LineId Id="278" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="280" Count="0" />
+      <LineId Id="283" Count="1" />
+      <LineId Id="279" Count="0" />
+      <LineId Id="291" Count="1" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="268" Count="8" />
+      <LineId Id="304" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="297" Count="0" />
+      <LineId Id="576" Count="2" />
+      <LineId Id="298" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="299" Count="0" />
+      <LineId Id="314" Count="0" />
+      <LineId Id="300" Count="2" />
+      <LineId Id="351" Count="0" />
+      <LineId Id="363" Count="1" />
+      <LineId Id="400" Count="0" />
+      <LineId Id="455" Count="2" />
+      <LineId Id="407" Count="0" />
+      <LineId Id="454" Count="0" />
+      <LineId Id="418" Count="0" />
+      <LineId Id="416" Count="0" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="924" Count="0" />
+      <LineId Id="700" Count="0" />
+      <LineId Id="650" Count="0" />
+      <LineId Id="458" Count="0" />
+      <LineId Id="461" Count="0" />
+      <LineId Id="460" Count="0" />
+      <LineId Id="538" Count="1" />
+      <LineId Id="738" Count="1" />
+      <LineId Id="851" Count="0" />
+      <LineId Id="778" Count="0" />
+      <LineId Id="691" Count="0" />
+      <LineId Id="699" Count="0" />
+      <LineId Id="537" Count="0" />
+      <LineId Id="651" Count="0" />
+      <LineId Id="961" Count="0" />
+      <LineId Id="500" Count="0" />
+      <LineId Id="412" Count="0" />
+      <LineId Id="497" Count="0" />
+      <LineId Id="414" Count="0" />
+      <LineId Id="417" Count="0" />
+      <LineId Id="413" Count="0" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="408" Count="0" />
+      <LineId Id="405" Count="0" />
+      <LineId Id="409" Count="0" />
+      <LineId Id="319" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="312" Count="0" />
+      <LineId Id="308" Count="0" />
+      <LineId Id="310" Count="1" />
+      <LineId Id="313" Count="0" />
+      <LineId Id="309" Count="0" />
+      <LineId Id="742" Count="0" />
+      <LineId Id="850" Count="0" />
+      <LineId Id="887" Count="0" />
+      <LineId Id="67" Count="14" />
+      <LineId Id="741" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="1392" Count="0" />
+      <LineId Id="84" Count="2" />
+      <LineId Id="88" Count="2" />
+      <LineId Id="92" Count="1" />
+      <LineId Id="97" Count="1" />
+      <LineId Id="102" Count="15" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="187" Count="0" />
+      <LineId Id="125" Count="15" />
+      <LineId Id="142" Count="5" />
+      <LineId Id="1183" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="1182" Count="0" />
+      <LineId Id="1289" Count="2" />
+      <LineId Id="1279" Count="0" />
+      <LineId Id="1283" Count="0" />
+      <LineId Id="1286" Count="0" />
+      <LineId Id="1284" Count="0" />
+      <LineId Id="1332" Count="0" />
+      <LineId Id="1373" Count="10" />
+      <LineId Id="1331" Count="0" />
+      <LineId Id="1280" Count="1" />
+      <LineId Id="149" Count="3" />
+      <LineId Id="1076" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P1_INIT.A1_Calculate_NC_Settings">
+      <LineId Id="2" Count="21" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="100" Count="1" />
+      <LineId Id="104" Count="1" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

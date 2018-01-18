@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="EtherCATComs" Id="{2abf7dcb-1891-4938-ad93-a08230d78e17}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM EtherCATComs //Handles all comunication over ethercat on ParamUpdate Task
+VAR
+	//QuickUpdate : FB_CheckIn_EtherCAT;
+	ParamUpdate : FB_EtherCATReader;
+	ParameterID_FromMom AT %I* : USINT;
+	ParameterID_ToMom AT %Q*: USINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//ParamUpdate();
+//ParameterID_ToMom := ParamUpdate.ID;
+ParamUpdate();]]></ST>
+    </Implementation>
+    <LineIds Name="EtherCATComs">
+      <LineId Id="5" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

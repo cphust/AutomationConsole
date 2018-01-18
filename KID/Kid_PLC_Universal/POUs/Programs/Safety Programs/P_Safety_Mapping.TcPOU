@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.3">
+  <POU Name="P_Safety_Mapping" Id="{55c6d51b-2b55-49b8-ab39-0c19ab75e223}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_Safety_Mapping
+VAR
+	fbF_Trig: F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+
+
+
+//	GVL_PLC.bSafetySystemResetRequired := TRUE;
+
+
+//IF GVL_Safe_IO.bAck_Error THEN
+//	GVL_PLC.bSafetySystemResetRequired := FALSE;
+//END_IF
+
+//Comms to TwinSAFE
+GVL_Safe_IO.bES_Restart_Local 		:= GVL_PLC.bLocalEstopRestart ;
+GVL_Safe_IO.bAck_Error				:= GVL_PLC.bSafetyErrAckInput ;
+//GVL_Safe_IO.bExternalEstopEn 		:= GVL_PLC.bExternalEstopEnInput;
+//GVL_Safe_IO.bES_Restart_External	:= GVL_PLC.bExternalEstopRestart;
+
+
+//Comms to Ethercat Slave Network
+]]></ST>
+    </Implementation>
+    <LineIds Name="P_Safety_Mapping">
+      <LineId Id="3" Count="19" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
